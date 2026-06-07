@@ -2,8 +2,8 @@ import { TileType, Tile, TileMap } from '@/app/types/tiles';
 import { createNoise2D } from "simplex-noise"
 import Alea from 'alea';
 
-const MAP_WIDTH = 50;
-const MAP_HEIGHT = 50;
+const MAP_WIDTH = 100;
+const MAP_HEIGHT = 100;
 const SCALE = 0.1;
 
 export function generateMap(seed: number = Math.random()): TileMap {
