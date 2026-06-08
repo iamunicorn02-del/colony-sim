@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { City, Tile, TileType, World } from '@/app/types/tiles';
+import { Tile, TileType, World } from '@/app/types/tiles';
+import { updateWorldForNewDay } from '@/app/utils/simulation';
 import styles from './MapRenderer.module.css';
 
 interface MapRendererProps {
@@ -39,7 +40,8 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
 };
 
 export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
-  const { map, cities } = world;
+  const [simulationWorld, setSimulationWorld] = useState(world);
+  const { map, cities } = simulationWorld;
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
   const mapPixelWidth = mapWidth * tileSize;
@@ -50,10 +52,11 @@ export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
   const [day, setDay] = useState(1);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, scale: 1 });
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
   const draggingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
   const pointerDownRef = useRef({ x: 0, y: 0 });
+  const selectedCity = cities.find((city) => city.id === selectedCityId) ?? null;
 
   const constrainCamera = useCallback((nextCamera: Camera) => {
     const viewport = containerRef.current;
@@ -98,6 +101,7 @@ export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setDay((currentDay) => currentDay + 1);
+      setSimulationWorld(updateWorldForNewDay);
     }, DAY_TICK_MS);
 
     return () => window.clearInterval(intervalId);
@@ -271,7 +275,7 @@ export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
 
     if (dragDistance <= DRAG_CLICK_THRESHOLD) {
       const city = getCityFromPointer(e.clientX, e.clientY);
-      setSelectedCity(city);
+      setSelectedCityId(city?.id ?? null);
       setSelectedTile(city ? null : getTileFromPointer(e.clientX, e.clientY));
     }
   }, [getCityFromPointer, getTileFromPointer]);
