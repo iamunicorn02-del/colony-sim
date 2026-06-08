@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { TileMap } from '@/app/types/tiles';
+import { Tile, TileMap, TileType } from '@/app/types/tiles';
 import styles from './MapRenderer.module.css';
 
 interface MapRendererProps {
@@ -17,7 +17,13 @@ interface Camera {
 
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 4;
+const DAY_TICK_MS = 1000;
 const KEYBOARD_PAN_DISTANCE = 48;
+const DRAG_CLICK_THRESHOLD = 4;
+const TILE_COLORS: Record<TileType, string> = {
+  [TileType.GRASS]: '#4a9d6f',
+  [TileType.WATER]: '#2563eb',
+};
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -34,24 +40,28 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
 export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
+  const mapPixelWidth = mapWidth * tileSize;
+  const mapPixelHeight = mapHeight * tileSize;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [day, setDay] = useState(1);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, scale: 1 });
+  const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const draggingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
+  const pointerDownRef = useRef({ x: 0, y: 0 });
 
   const constrainCamera = useCallback((nextCamera: Camera) => {
     const viewport = containerRef.current;
-    const mapElement = mapRef.current;
 
-    if (!viewport || !mapElement) {
+    if (!viewport) {
       return nextCamera;
     }
 
     const scale = clamp(nextCamera.scale, MIN_SCALE, MAX_SCALE);
-    const contentWidth = mapElement.offsetWidth * scale;
-    const contentHeight = mapElement.offsetHeight * scale;
+    const contentWidth = mapPixelWidth * scale;
+    const contentHeight = mapPixelHeight * scale;
     const xBounds = getAxisBounds(viewport.clientWidth, contentWidth);
     const yBounds = getAxisBounds(viewport.clientHeight, contentHeight);
 
@@ -60,34 +70,89 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
       x: clamp(nextCamera.x, xBounds.min, xBounds.max),
       y: clamp(nextCamera.y, yBounds.min, yBounds.max),
     };
-  }, []);
+  }, [mapPixelHeight, mapPixelWidth]);
 
   const centerView = useCallback(() => {
     const viewport = containerRef.current;
-    const mapElement = mapRef.current;
 
-    if (!viewport || !mapElement) {
+    if (!viewport) {
       return;
     }
 
     setCamera(
       constrainCamera({
         scale: 1,
-        x: (viewport.clientWidth - mapElement.offsetWidth) / 2,
-        y: (viewport.clientHeight - mapElement.offsetHeight) / 2,
+        x: (viewport.clientWidth - mapPixelWidth) / 2,
+        y: (viewport.clientHeight - mapPixelHeight) / 2,
       }),
     );
-  }, [constrainCamera]);
+  }, [constrainCamera, mapPixelHeight, mapPixelWidth]);
 
   useEffect(() => {
     centerView();
   }, [centerView, mapHeight, mapWidth, tileSize]);
 
   useEffect(() => {
-    const viewport = containerRef.current;
-    const mapElement = mapRef.current;
+    const intervalId = window.setInterval(() => {
+      setDay((currentDay) => currentDay + 1);
+    }, DAY_TICK_MS);
 
-    if (!viewport || !mapElement) {
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+
+    if (!canvas || !map || mapHeight === 0 || mapWidth === 0) {
+      return;
+    }
+
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      return;
+    }
+
+    const pixelRatio = window.devicePixelRatio || 1;
+    canvas.width = Math.round(mapPixelWidth * pixelRatio);
+    canvas.height = Math.round(mapPixelHeight * pixelRatio);
+    canvas.style.width = `${mapPixelWidth}px`;
+    canvas.style.height = `${mapPixelHeight}px`;
+
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    context.clearRect(0, 0, mapPixelWidth, mapPixelHeight);
+
+    for (const row of map) {
+      for (const tile of row) {
+        context.fillStyle = TILE_COLORS[tile.type];
+        context.fillRect(tile.x * tileSize, tile.y * tileSize, tileSize, tileSize);
+      }
+    }
+
+    context.strokeStyle = 'rgba(23, 23, 23, 0.22)';
+    context.lineWidth = 1;
+
+    for (let x = 0; x <= mapWidth; x++) {
+      const position = x * tileSize + 0.5;
+      context.beginPath();
+      context.moveTo(position, 0);
+      context.lineTo(position, mapPixelHeight);
+      context.stroke();
+    }
+
+    for (let y = 0; y <= mapHeight; y++) {
+      const position = y * tileSize + 0.5;
+      context.beginPath();
+      context.moveTo(0, position);
+      context.lineTo(mapPixelWidth, position);
+      context.stroke();
+    }
+  }, [map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
+
+  useEffect(() => {
+    const viewport = containerRef.current;
+
+    if (!viewport) {
       return;
     }
 
@@ -96,10 +161,29 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
     });
 
     resizeObserver.observe(viewport);
-    resizeObserver.observe(mapElement);
 
     return () => resizeObserver.disconnect();
   }, [constrainCamera]);
+
+  const getTileFromPointer = useCallback((clientX: number, clientY: number) => {
+    const viewport = containerRef.current;
+
+    if (!viewport || !map) {
+      return null;
+    }
+
+    const rect = viewport.getBoundingClientRect();
+    const contentX = (clientX - rect.left - camera.x) / camera.scale;
+    const contentY = (clientY - rect.top - camera.y) / camera.scale;
+    const tileX = Math.floor(contentX / tileSize);
+    const tileY = Math.floor(contentY / tileSize);
+
+    if (tileX < 0 || tileY < 0 || tileX >= mapWidth || tileY >= mapHeight) {
+      return null;
+    }
+
+    return map[tileY][tileX];
+  }, [camera.scale, camera.x, camera.y, map, mapHeight, mapWidth, tileSize]);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     const el = containerRef.current;
@@ -110,6 +194,7 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
     el.setPointerCapture(e.pointerId);
     draggingRef.current = true;
     lastPosRef.current = { x: e.clientX, y: e.clientY };
+    pointerDownRef.current = { x: e.clientX, y: e.clientY };
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
@@ -131,7 +216,16 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
     if (!el) return;
     try { el.releasePointerCapture(e.pointerId); } catch {}
     draggingRef.current = false;
-  }, []);
+
+    const dragDistance = Math.hypot(
+      e.clientX - pointerDownRef.current.x,
+      e.clientY - pointerDownRef.current.y,
+    );
+
+    if (dragDistance <= DRAG_CLICK_THRESHOLD) {
+      setSelectedTile(getTileFromPointer(e.clientX, e.clientY));
+    }
+  }, [getTileFromPointer]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -229,6 +323,7 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
       onWheel={onWheel}
       onDoubleClick={centerView}
       onKeyDown={onKeyDown}
+      onDragStart={(e) => e.preventDefault()}
     >
       <div
         className={styles.content}
@@ -236,25 +331,27 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
           transform: `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.scale})`,
         }}
       >
-        <div
-          ref={mapRef}
-          className={styles.mapContainer}
-          style={{
-            '--grid-cols': mapWidth,
-            '--tile-size': `${tileSize}px`,
-          } as React.CSSProperties & { '--grid-cols': number; '--tile-size': string }}
-        >
-          {map.map((row, y) =>
-            row.map((tile, x) => (
-              <div
-                key={`${x}-${y}`}
-                className={`${styles.tile} ${styles[tile.type]}`}
-                title={`${tile.type} at (${x}, ${y})`}
-              />
-            ))
-          )}
-        </div>
+        <canvas
+          ref={canvasRef}
+          className={styles.mapCanvas}
+          draggable={false}
+        />
       </div>
+      <div className={styles.dayHud} aria-live="polite">
+        Day {day}
+      </div>
+      <aside className={styles.inspector} aria-live="polite">
+        <span className={styles.inspectorTitle}>Tile inspector</span>
+        {selectedTile ? (
+          <>
+            <span>Type: {selectedTile.type}</span>
+            <span>X: {selectedTile.x}</span>
+            <span>Y: {selectedTile.y}</span>
+          </>
+        ) : (
+          <span>No tile selected</span>
+        )}
+      </aside>
     </div>
   );
 }
