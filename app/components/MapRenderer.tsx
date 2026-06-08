@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Tile, TileMap, TileType } from '@/app/types/tiles';
+import { City, Tile, TileType, World } from '@/app/types/tiles';
 import styles from './MapRenderer.module.css';
 
 interface MapRendererProps {
-  map: TileMap;
+  world: World;
   tileSize?: number;
 }
 
@@ -20,6 +20,7 @@ const MAX_SCALE = 4;
 const DAY_TICK_MS = 1000;
 const KEYBOARD_PAN_DISTANCE = 48;
 const DRAG_CLICK_THRESHOLD = 4;
+const CITY_MARKER_RADIUS = 6;
 const TILE_COLORS: Record<TileType, string> = {
   [TileType.GRASS]: '#4a9d6f',
   [TileType.WATER]: '#2563eb',
@@ -37,7 +38,8 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
   return { min: viewportSize - contentSize, max: 0 };
 };
 
-export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
+export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
+  const { map, cities } = world;
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
   const mapPixelWidth = mapWidth * tileSize;
@@ -48,6 +50,7 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
   const [day, setDay] = useState(1);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, scale: 1 });
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const draggingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
   const pointerDownRef = useRef({ x: 0, y: 0 });
@@ -147,7 +150,25 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
       context.lineTo(mapPixelWidth, position);
       context.stroke();
     }
-  }, [map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
+
+    for (const city of cities) {
+      const centerX = (city.x + 0.5) * tileSize;
+      const centerY = (city.y + 0.5) * tileSize;
+
+      context.beginPath();
+      context.arc(centerX, centerY, CITY_MARKER_RADIUS, 0, Math.PI * 2);
+      context.fillStyle = '#f5c542';
+      context.fill();
+      context.lineWidth = 2;
+      context.strokeStyle = '#3b2600';
+      context.stroke();
+
+      context.beginPath();
+      context.arc(centerX, centerY, 2, 0, Math.PI * 2);
+      context.fillStyle = '#1b1302';
+      context.fill();
+    }
+  }, [cities, map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
 
   useEffect(() => {
     const viewport = containerRef.current;
@@ -165,25 +186,51 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
     return () => resizeObserver.disconnect();
   }, [constrainCamera]);
 
-  const getTileFromPointer = useCallback((clientX: number, clientY: number) => {
+  const getMapPointFromPointer = useCallback((clientX: number, clientY: number) => {
     const viewport = containerRef.current;
 
-    if (!viewport || !map) {
+    if (!viewport) {
       return null;
     }
 
     const rect = viewport.getBoundingClientRect();
-    const contentX = (clientX - rect.left - camera.x) / camera.scale;
-    const contentY = (clientY - rect.top - camera.y) / camera.scale;
-    const tileX = Math.floor(contentX / tileSize);
-    const tileY = Math.floor(contentY / tileSize);
+    return {
+      x: (clientX - rect.left - camera.x) / camera.scale,
+      y: (clientY - rect.top - camera.y) / camera.scale,
+    };
+  }, [camera.scale, camera.x, camera.y]);
+
+  const getCityFromPointer = useCallback((clientX: number, clientY: number) => {
+    const point = getMapPointFromPointer(clientX, clientY);
+
+    if (!point) {
+      return null;
+    }
+
+    return cities.find((city) => {
+      const centerX = (city.x + 0.5) * tileSize;
+      const centerY = (city.y + 0.5) * tileSize;
+
+      return Math.hypot(point.x - centerX, point.y - centerY) <= CITY_MARKER_RADIUS + 2;
+    }) ?? null;
+  }, [cities, getMapPointFromPointer, tileSize]);
+
+  const getTileFromPointer = useCallback((clientX: number, clientY: number) => {
+    const point = getMapPointFromPointer(clientX, clientY);
+
+    if (!point || !map) {
+      return null;
+    }
+
+    const tileX = Math.floor(point.x / tileSize);
+    const tileY = Math.floor(point.y / tileSize);
 
     if (tileX < 0 || tileY < 0 || tileX >= mapWidth || tileY >= mapHeight) {
       return null;
     }
 
     return map[tileY][tileX];
-  }, [camera.scale, camera.x, camera.y, map, mapHeight, mapWidth, tileSize]);
+  }, [getMapPointFromPointer, map, mapHeight, mapWidth, tileSize]);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     const el = containerRef.current;
@@ -223,9 +270,11 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
     );
 
     if (dragDistance <= DRAG_CLICK_THRESHOLD) {
-      setSelectedTile(getTileFromPointer(e.clientX, e.clientY));
+      const city = getCityFromPointer(e.clientX, e.clientY);
+      setSelectedCity(city);
+      setSelectedTile(city ? null : getTileFromPointer(e.clientX, e.clientY));
     }
-  }, [getTileFromPointer]);
+  }, [getCityFromPointer, getTileFromPointer]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -341,8 +390,17 @@ export function MapRenderer({ map, tileSize = 16 }: MapRendererProps) {
         Day {day}
       </div>
       <aside className={styles.inspector} aria-live="polite">
-        <span className={styles.inspectorTitle}>Tile inspector</span>
-        {selectedTile ? (
+        <span className={styles.inspectorTitle}>
+          {selectedCity ? 'City inspector' : 'Tile inspector'}
+        </span>
+        {selectedCity ? (
+          <>
+            <span>Name: {selectedCity.name}</span>
+            <span>X: {selectedCity.x}</span>
+            <span>Y: {selectedCity.y}</span>
+            <span>Population: {selectedCity.population}</span>
+          </>
+        ) : selectedTile ? (
           <>
             <span>Type: {selectedTile.type}</span>
             <span>X: {selectedTile.x}</span>

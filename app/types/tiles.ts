@@ -9,4 +9,17 @@ export interface Tile {
   y: number;
 }
 
+export type City = {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  population: number;
+};
+
 export type TileMap = Tile[][];
+
+export type World = {
+  map: TileMap;
+  cities: City[];
+};
