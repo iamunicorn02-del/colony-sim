@@ -1,13 +1,12 @@
-'use client';
-
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Tile, TileType, World } from '@/app/types/tiles';
-import { updateWorldForNewDay } from '@/app/utils/simulation';
+import { City, Tile, TileType, World } from '@/app/types/tiles';
 import styles from './MapRenderer.module.css';
 
 interface MapRendererProps {
   world: World;
   tileSize?: number;
+  setSelectedTile: (tile: Tile | null) => void;
+  setSelectedCity: (city: City | null) => void;
 }
 
 interface Camera {
@@ -16,9 +15,10 @@ interface Camera {
   scale: number;
 }
 
+
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 4;
-const DAY_TICK_MS = 1000;
+
 const KEYBOARD_PAN_DISTANCE = 48;
 const DRAG_CLICK_THRESHOLD = 4;
 const CITY_MARKER_RADIUS = 6;
@@ -39,7 +39,7 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
   return { min: viewportSize - contentSize, max: 0 };
 };
 
-export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
+export function MapRenderer({ world, tileSize = 16, setSelectedCity, setSelectedTile }: MapRendererProps) {
   const [simulationWorld, setSimulationWorld] = useState(world);
   const { map, cities } = simulationWorld;
   const mapHeight = map?.length ?? 0;
@@ -51,7 +51,6 @@ export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [day, setDay] = useState(1);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, scale: 1 });
-  const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
   const draggingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
@@ -98,14 +97,14 @@ export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
     centerView();
   }, [centerView, mapHeight, mapWidth, tileSize]);
 
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setDay((currentDay) => currentDay + 1);
-      setSimulationWorld(updateWorldForNewDay);
-    }, DAY_TICK_MS);
+  // useEffect(() => {
+  //   const intervalId = window.setInterval(() => {
+  //     setDay((currentDay) => currentDay + 1);
+  //     setSimulationWorld(updateWorldForNewDay);
+  //   }, DAY_TICK_MS);
 
-    return () => window.clearInterval(intervalId);
-  }, []);
+  //   return () => window.clearInterval(intervalId);
+  // }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -275,7 +274,7 @@ export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
 
     if (dragDistance <= DRAG_CLICK_THRESHOLD) {
       const city = getCityFromPointer(e.clientX, e.clientY);
-      setSelectedCityId(city?.id ?? null);
+      setSelectedCity(city);
       setSelectedTile(city ? null : getTileFromPointer(e.clientX, e.clientY));
     }
   }, [getCityFromPointer, getTileFromPointer]);
@@ -390,30 +389,6 @@ export function MapRenderer({ world, tileSize = 16 }: MapRendererProps) {
           draggable={false}
         />
       </div>
-      <div className={styles.dayHud} aria-live="polite">
-        Day {day}
-      </div>
-      <aside className={styles.inspector} aria-live="polite">
-        <span className={styles.inspectorTitle}>
-          {selectedCity ? 'City inspector' : 'Tile inspector'}
-        </span>
-        {selectedCity ? (
-          <>
-            <span>Name: {selectedCity.name}</span>
-            <span>X: {selectedCity.x}</span>
-            <span>Y: {selectedCity.y}</span>
-            <span>Population: {selectedCity.population}</span>
-          </>
-        ) : selectedTile ? (
-          <>
-            <span>Type: {selectedTile.type}</span>
-            <span>X: {selectedTile.x}</span>
-            <span>Y: {selectedTile.y}</span>
-          </>
-        ) : (
-          <span>No tile selected</span>
-        )}
-      </aside>
     </div>
   );
 }
