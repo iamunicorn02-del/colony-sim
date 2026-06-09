@@ -14,34 +14,43 @@ const DAY_TICK_MS = 1000;
 export function WorldView() {
   const [world, setWorld] = useState<World>(generateMap(42))
   const [day, setDay] = useState(1)
-  const [selectedCityId, setSelectedCityId] = useState<string |null>(null);
-  const [selectedTile, setSelectedTile] = useState<Tile|null>(null);
-  const eventLog : Event[] = []
-  const selectedCity = world.cities.find((cities) => cities.id === selectedCityId) ?? null;
+  const [selectedCityId, setSelectedCityId] = useState<string | null>(null)
+  const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
+  const [eventLog, setEventLog] = useState<Event[]>([])
+  const selectedCity = world.cities.find((cities) => cities.id === selectedCityId) ?? null
+
   useEffect(() => {
     const id = setInterval(() => {
-      setDay(d => d + 1)
-      setWorld(world => updateWorldForNewDay(world))
-      if (day % 10 === 0) {
-        eventLog.push({
-          id: crypto.randomUUID(),
-          day,
-          message: "passed 10 days"
-        })
-      }
+      setDay((prevDay) => {
+        const newDay = prevDay + 1
+        if (newDay % 10 === 0) {
+          setEventLog((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              day: newDay,
+              message: "passed 10 days",
+            },
+          ])
+          // Keep only the last 20 events
+          setEventLog((prev) => prev.slice(-20))
+        }
+        return newDay
+      })
+      setWorld((prevWorld) => updateWorldForNewDay(prevWorld))
     }, DAY_TICK_MS)
 
     return () => clearInterval(id)
   }, [])
-  
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-black font-sans">
       <main className="h-full w-full">
-        <MapRenderer world={world} tileSize={16} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile}/>
-        <DayCounter day={day}/>
-        <TileInspector selectedTile={selectedTile} selectedCity={selectedCity}/>
-        <EventLog />
+        <MapRenderer world={world} tileSize={16} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} />
+        <DayCounter day={day} />
+        <TileInspector selectedTile={selectedTile} selectedCity={selectedCity} />
+        <EventLog eventLog={eventLog} />
       </main>
     </div>
-  );
+  )
 }
