@@ -1,9 +1,5 @@
 import { City, World } from '@/app/types/tiles';
-
-const CITY_DAILY_POPULATION_GROWTH = {
-  min: 1,
-  max: 12,
-};
+import { CITY_DAILY_POPULATION_GROWTH } from '../config';
 
 const getRandomInt = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -30,4 +26,3 @@ export const updateWorldForNewDay = (world: World): World => {
 //   cities: world.cities.map(growCityPopulation),
 // });
 
-export { CITY_DAILY_POPULATION_GROWTH };

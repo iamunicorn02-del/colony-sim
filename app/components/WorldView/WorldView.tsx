@@ -8,11 +8,10 @@ import { useEffect, useState } from 'react';
 import { Tile, City, World, Event } from '@/app/types/tiles';
 import { updateWorldForNewDay } from '@/app/lib/simulation';
 import { EventLog } from '../EventLog/EventLog';
-
-const DAY_TICK_MS = 1000;
+import { DAY_TICK_MS, DEFAULT_MAP_SEED, EVENT_INTERVAL_DAYS, MAX_EVENT_LOG_SIZE } from '@/app/config';
 
 export function WorldView() {
-  const [world, setWorld] = useState<World>(generateMap(42))
+  const [world, setWorld] = useState<World>(generateMap(DEFAULT_MAP_SEED))
   const [day, setDay] = useState(1)
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null)
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
@@ -23,17 +22,17 @@ export function WorldView() {
     const id = setInterval(() => {
       setDay((prevDay) => {
         const newDay = prevDay + 1
-        if (newDay % 10 === 0) {
+        if (newDay % EVENT_INTERVAL_DAYS === 0) {
           setEventLog((prev) => [
             ...prev,
             {
               id: crypto.randomUUID(),
               day: newDay,
-              message: "passed 10 days",
+              message: `passed ${EVENT_INTERVAL_DAYS} days`,
             },
           ])
-          // Keep only the last 20 events
-          setEventLog((prev) => prev.slice(-20))
+          // Keep only the last MAX_EVENT_LOG_SIZE events
+          setEventLog((prev) => prev.slice(-MAX_EVENT_LOG_SIZE))
         }
         return newDay
       })

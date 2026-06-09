@@ -1,40 +1,19 @@
 import { City, TileType, Tile, TileMap, World } from '@/app/types/tiles';
 import { createNoise2D } from "simplex-noise"
 import Alea from 'alea';
-
-const MAP_WIDTH = 100;
-const MAP_HEIGHT = 100;
-const SCALE = 0.1;
-const CITY_COUNT_RANGE = {
-  min: 5,
-  max: 15,
-};
-const MIN_CITY_DISTANCE = 10;
-const MAX_CITY_PLACEMENT_ATTEMPTS = 5000;
-const CITY_NAME_PARTS = [
-  'Green',
-  'River',
-  'Stone',
-  'Oak',
-  'Lake',
-  'Hill',
-  'Sun',
-  'North',
-  'Meadow',
-  'Ash',
-];
-const CITY_NAME_SUFFIXES = [
-  'ford',
-  'haven',
-  'watch',
-  'field',
-  'bridge',
-  'rest',
-  'fall',
-  'point',
-  'stead',
-  'vale',
-];
+import {
+  MAP_WIDTH,
+  MAP_HEIGHT,
+  NOISE_SCALE,
+  CITY_COUNT_RANGE,
+  MIN_CITY_DISTANCE,
+  MAX_CITY_PLACEMENT_ATTEMPTS,
+  CITY_NAME_PARTS,
+  CITY_NAME_SUFFIXES,
+  TILE_THRESHOLD_WATER,
+  TILE_THRESHOLD_GRASS,
+  CITY_INITIAL_POPULATION_RANGE,
+} from '../config';
 
 const getRandomInt = (random: () => number, min: number, max: number) =>
   Math.floor(random() * (max - min + 1)) + min;
@@ -77,7 +56,7 @@ const generateCities = (map: TileMap, random: () => number): City[] => {
       name: createCityName(random),
       x,
       y,
-      population: getRandomInt(random, 60, 450),
+      population: getRandomInt(random, CITY_INITIAL_POPULATION_RANGE.min, CITY_INITIAL_POPULATION_RANGE.max),
     });
   }
 
@@ -104,8 +83,8 @@ export function generateMap(seed: number = Math.random()): World {
     const row: Tile[] = [];
     
     for (let x = 0; x < MAP_WIDTH; x++) {
-      const value = (noise(x*SCALE, y*SCALE) + 1) / 2
-      const type = value < 0.4 ? TileType.WATER : TileType.GRASS;
+      const value = (noise(x*NOISE_SCALE, y*NOISE_SCALE) + 1) / 2
+      const type = value < TILE_THRESHOLD_WATER ? TileType.WATER : value < TILE_THRESHOLD_GRASS ? TileType.GRASS : TileType.MOUNTAIN;
       row.push({
         type,
         x,
@@ -120,5 +99,3 @@ export function generateMap(seed: number = Math.random()): World {
     cities: generateCities(map, seededRandom),
   };
 }
-
-export { CITY_COUNT_RANGE, MAP_WIDTH, MAP_HEIGHT };

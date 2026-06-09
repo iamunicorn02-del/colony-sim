@@ -1,6 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { City, Tile, TileType, World } from '@/app/types/tiles';
+import { City, Tile, World } from '@/app/types/tiles';
 import styles from './MapRenderer.module.css';
+import {
+  MIN_SCALE,
+  MAX_SCALE,
+  KEYBOARD_PAN_DISTANCE,
+  DRAG_CLICK_THRESHOLD,
+  CITY_MARKER_RADIUS,
+  TILE_COLORS,
+} from '@/app/config';
 
 interface MapRendererProps {
   world: World;
@@ -14,18 +22,6 @@ interface Camera {
   y: number;
   scale: number;
 }
-
-
-const MIN_SCALE = 0.2;
-const MAX_SCALE = 4;
-
-const KEYBOARD_PAN_DISTANCE = 48;
-const DRAG_CLICK_THRESHOLD = 4;
-const CITY_MARKER_RADIUS = 6;
-const TILE_COLORS: Record<TileType, string> = {
-  [TileType.GRASS]: '#4a9d6f',
-  [TileType.WATER]: '#2563eb',
-};
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
