@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Tile, TileType, City } from '@/app/types/tiles';
+import { Tile, City } from '@/app/types/tiles';
 import styles from './TileInspector.module.css';
 
 interface TileInspectorProps {
@@ -8,7 +7,6 @@ interface TileInspectorProps {
 }
 
 export function TileInspector({selectedTile, selectedCity}:TileInspectorProps) {
-
     return (
     <aside className={styles.inspector} aria-live="polite">
             <span className={styles.inspectorTitle}>

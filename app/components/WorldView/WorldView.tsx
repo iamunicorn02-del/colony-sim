@@ -7,19 +7,20 @@ import { DayCounter } from '../DayCounter/DayCounter';
 import { useEffect, useState } from 'react';
 import { Tile, City, World } from '@/app/types/tiles';
 import { updateWorldForNewDay } from '@/app/lib/simulation';
+import { EventLog } from '../EventLog/EventLog';
 
 const DAY_TICK_MS = 1000;
 
 export function WorldView() {
   const [world, setWorld] = useState<World>(generateMap(42))
   const [day, setDay] = useState(1)
-  const [selectedCity, setSelectedCity] = useState<City |null>(null);
+  const [selectedCityId, setSelectedCityId] = useState<string |null>(null);
   const [selectedTile, setSelectedTile] = useState<Tile|null>(null);
-
+  const selectedCity = world.cities.find((cities) => cities.id === selectedCityId) ?? null;
   useEffect(() => {
     const id = setInterval(() => {
       setDay(d => d + 1)
-      setWorld(updateWorldForNewDay)
+      setWorld(world => updateWorldForNewDay(world))
     }, DAY_TICK_MS)
 
     return () => clearInterval(id)
@@ -28,9 +29,10 @@ export function WorldView() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-black font-sans">
       <main className="h-full w-full">
-        <MapRenderer world={world} tileSize={16} setSelectedCity={setSelectedCity} setSelectedTile={setSelectedTile}/>
+        <MapRenderer world={world} tileSize={16} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile}/>
         <DayCounter day={day}/>
         <TileInspector selectedTile={selectedTile} selectedCity={selectedCity}/>
+        <EventLog />
       </main>
     </div>
   );

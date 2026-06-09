@@ -6,7 +6,7 @@ interface MapRendererProps {
   world: World;
   tileSize?: number;
   setSelectedTile: (tile: Tile | null) => void;
-  setSelectedCity: (city: City | null) => void;
+  setSelectedCityId: (cityId: string | null) => void;
 }
 
 interface Camera {
@@ -39,23 +39,18 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
   return { min: viewportSize - contentSize, max: 0 };
 };
 
-export function MapRenderer({ world, tileSize = 16, setSelectedCity, setSelectedTile }: MapRendererProps) {
-  const [simulationWorld, setSimulationWorld] = useState(world);
-  const { map, cities } = simulationWorld;
+export function MapRenderer({ world, tileSize = 16, setSelectedCityId, setSelectedTile }: MapRendererProps) {
+  const { map, cities } = world;
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
   const mapPixelWidth = mapWidth * tileSize;
   const mapPixelHeight = mapHeight * tileSize;
-
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [day, setDay] = useState(1);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, scale: 1 });
-  const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
   const draggingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
   const pointerDownRef = useRef({ x: 0, y: 0 });
-  const selectedCity = cities.find((city) => city.id === selectedCityId) ?? null;
 
   const constrainCamera = useCallback((nextCamera: Camera) => {
     const viewport = containerRef.current;
@@ -274,7 +269,7 @@ export function MapRenderer({ world, tileSize = 16, setSelectedCity, setSelected
 
     if (dragDistance <= DRAG_CLICK_THRESHOLD) {
       const city = getCityFromPointer(e.clientX, e.clientY);
-      setSelectedCity(city);
+      setSelectedCityId(city ? city.id : null);
       setSelectedTile(city ? null : getTileFromPointer(e.clientX, e.clientY));
     }
   }, [getCityFromPointer, getTileFromPointer]);
