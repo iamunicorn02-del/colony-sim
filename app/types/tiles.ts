@@ -23,3 +23,9 @@ export type World = {
   map: TileMap;
   cities: City[];
 };
+
+export type Event = {
+    id: string;
+    day: number;
+    message: string;
+}

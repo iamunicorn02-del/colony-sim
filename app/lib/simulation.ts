@@ -18,9 +18,16 @@ const growCityPopulation = (city: City): City => ({
     ),
 });
 
-export const updateWorldForNewDay = (world: World): World => ({
-  ...world,
-  cities: world.cities.map(growCityPopulation),
-});
+export const updateWorldForNewDay = (world: World): World => {
+    if (true) {}
+
+    return {...world, 
+        cities: world.cities.map(growCityPopulation)
+    }
+}
+// : World => ({
+//   ...world,
+//   cities: world.cities.map(growCityPopulation),
+// });
 
 export { CITY_DAILY_POPULATION_GROWTH };
