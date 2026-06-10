@@ -16,6 +16,8 @@ export type City = {
   x: number;
   y: number;
   population: number;
+  food: number;
+  gold: number;
 };
 
 export type TileMap = Tile[][];

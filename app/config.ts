@@ -40,6 +40,8 @@ export const CITY_NAME_SUFFIXES = [
 ];
 
 export const CITY_INITIAL_POPULATION_RANGE = { min: 60, max: 450 };
+export const CITY_INITIAL_FOOD_RANGE = { min: 100, max: 400 };
+export const CITY_INITIAL_GOLD_RANGE = { min: 50, max: 200 };
 
 // --- Simulation ---
 export const DAY_TICK_MS = 1000;
@@ -47,10 +49,28 @@ export const EVENT_INTERVAL_DAYS = 10;
 export const MAX_EVENT_LOG_SIZE = 20;
 export const DEFAULT_MAP_SEED = 42;
 
-export const CITY_DAILY_POPULATION_GROWTH = {
-  min: 1,
-  max: 12,
-};
+// --- Economy ---
+// Radius (in tiles) of the area a city harvests food from.
+export const CITY_HARVEST_RADIUS = 3;
+// Food produced per tile type within the harvest radius, per day.
+export const FOOD_PER_GRASS_TILE = 1.2;
+export const FOOD_PER_WATER_TILE = 0.5;
+export const FOOD_PER_MOUNTAIN_TILE = 0;
+// Each citizen eats this much food per day.
+export const FOOD_CONSUMPTION_PER_CAPITA = 0.04;
+// Max food a city granary can hold per citizen (carrying capacity buffer).
+export const FOOD_STORAGE_PER_CAPITA = 5;
+
+// Gold collected as tax per citizen per day.
+export const GOLD_TAX_PER_CAPITA = 0.02;
+
+// Population dynamics driven by the food balance.
+// Fraction of citizens added per day when there is a food surplus.
+export const POPULATION_GROWTH_RATE = 0.02;
+// Fraction of citizens lost per day when the granary is empty (starvation).
+export const POPULATION_STARVATION_RATE = 0.05;
+// A city can never drop below this many citizens.
+export const MIN_CITY_POPULATION = 1;
 
 // --- Rendering ---
 export const MIN_SCALE = 0.2;

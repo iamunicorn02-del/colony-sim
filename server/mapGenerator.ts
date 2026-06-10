@@ -13,6 +13,8 @@ import {
   TILE_THRESHOLD_WATER,
   TILE_THRESHOLD_GRASS,
   CITY_INITIAL_POPULATION_RANGE,
+  CITY_INITIAL_FOOD_RANGE,
+  CITY_INITIAL_GOLD_RANGE,
 } from '../app/config';
 
 const getRandomInt = (random: () => number, min: number, max: number) =>
@@ -57,6 +59,8 @@ const generateCities = (map: TileMap, random: () => number): City[] => {
       x,
       y,
       population: getRandomInt(random, CITY_INITIAL_POPULATION_RANGE.min, CITY_INITIAL_POPULATION_RANGE.max),
+      food: getRandomInt(random, CITY_INITIAL_FOOD_RANGE.min, CITY_INITIAL_FOOD_RANGE.max),
+      gold: getRandomInt(random, CITY_INITIAL_GOLD_RANGE.min, CITY_INITIAL_GOLD_RANGE.max),
     });
   }
 

@@ -18,6 +18,8 @@ export function TileInspector({selectedTile, selectedCity}:TileInspectorProps) {
                 <span>X: {selectedCity.x}</span>
                 <span>Y: {selectedCity.y}</span>
                 <span>Population: {selectedCity.population}</span>
+                <span>Food: {selectedCity.food}</span>
+                <span>Gold: {selectedCity.gold}</span>
             </>
             ) : selectedTile ? (
             <>
