@@ -8,6 +8,8 @@ import { Tile, City, World, Event } from '@/app/types/tiles';
 import { EventLog } from '../EventLog/EventLog';
 import { createWorldSocket } from '@/app/lib/worldSocket';
 
+const WORLD_ID_KEY = 'colony-sim:worldId';
+
 export function WorldView() {
   const [world, setWorld] = useState<World | null>(null);
   const [day, setDay] = useState(0);
@@ -29,14 +31,36 @@ export function WorldView() {
     let destroyed = false;
     let unsub: (() => void) | undefined;
 
-    fetch('/api/world', { method: 'POST' })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to create world');
-        return res.json();
-      })
-      .then((data) => {
+    // Reuse the persisted world if it still exists on the server,
+    // otherwise create a fresh one.
+    const resolveWorldId = async (): Promise<string> => {
+      const savedId =
+        typeof window !== 'undefined' ? window.localStorage.getItem(WORLD_ID_KEY) : null;
+
+      if (savedId) {
+        try {
+          const res = await fetch(`/api/world/${savedId}`);
+          if (res.ok) {
+            return savedId;
+          }
+        } catch {
+          // fall through to creating a new world
+        }
+      }
+
+      const res = await fetch('/api/world', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to create world');
+      const data = await res.json();
+      const id: string = data.worldId;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(WORLD_ID_KEY, id);
+      }
+      return id;
+    };
+
+    resolveWorldId()
+      .then((id) => {
         if (destroyed) return;
-        const id: string = data.worldId;
         worldIdRef.current = id;
 
         const socket = createWorldSocket();
