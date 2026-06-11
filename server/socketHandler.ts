@@ -5,6 +5,11 @@ import {
   removeClient,
   broadcast,
 } from './worldStore';
+import { TradeLink } from './trading';
+import { World, City, Event } from '../app/types/tiles';
+
+type CityPayload = Omit<City, 'humanIds'>;
+type WorldPayload = { map: World['map']; cities: CityPayload[]; humans: World['humans'] };
 
 export type ClientMessage =
   | { type: 'joinWorld'; worldId: string }
@@ -12,7 +17,7 @@ export type ClientMessage =
   | { type: 'ping' };
 
 export type ServerMessage =
-  | { type: 'worldState'; world: unknown; day: number; eventLog: unknown[] }
+  | { type: 'worldState'; world: WorldPayload; day: number; eventLog: Event[]; dailyStory: string | null; tradeLinks: TradeLink[] }
   | { type: 'event'; day: number; message: string }
   | { type: 'error'; message: string }
   | { type: 'pong' };
@@ -35,12 +40,15 @@ export function handleMessage(ws: WebSocket, raw: string) {
         return;
       }
       addClient(worldId, ws);
+      const cleanCities = entry.world.cities.map(({ humanIds, ...rest }) => rest);
       ws.send(
         JSON.stringify({
           type: 'worldState',
-          world: entry.world,
+          world: { ...entry.world, cities: cleanCities },
           day: entry.day,
           eventLog: entry.eventLog,
+          dailyStory: entry.dailyStory,
+          tradeLinks: [],
         })
       );
       break;

@@ -139,9 +139,10 @@ function tickWorld(id: string) {
     entry.eventLog = entry.eventLog.slice(-MAX_EVENT_LOG_SIZE);
   }
 
+  const cleanCities = entry.world.cities.map(({ humanIds, ...rest }) => rest);
   broadcast(id, {
     type: 'worldState',
-    world: entry.world,
+    world: { ...entry.world, cities: cleanCities },
     day: entry.day,
     eventLog: entry.eventLog,
     dailyStory: entry.dailyStory,
