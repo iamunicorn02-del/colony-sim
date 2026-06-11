@@ -113,6 +113,18 @@ export const updateWorldForNewDay = (world: World): World => {
   // Update humans
   for (const human of Object.values(world.humans)) {
     const h = { ...human };
+
+    // Movement: only if not eating or resting, 30% chance to move
+    if (human.currentAction !== 'eating' && human.currentAction !== 'resting') {
+      if (Math.random() < 0.3) {
+        const dx = Math.floor(Math.random() * 3) - 1; // -1, 0, or +1
+        const dy = Math.floor(Math.random() * 3) - 1; // -1, 0, or +1
+        h.x = Math.max(0, Math.min(99, h.x + dx));
+        h.y = Math.max(0, Math.min(99, h.y + dy));
+        h.currentAction = 'moving';
+      }
+    }
+
     h.hunger = Math.max(0, h.hunger - (Math.floor(Math.random() * 6) + 5));
     h.energy = Math.max(0, h.energy - (Math.floor(Math.random() * 5) + 3));
     if (h.hunger < 20) h.currentAction = 'eating';
