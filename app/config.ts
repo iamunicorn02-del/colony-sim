@@ -3,10 +3,13 @@ import { CityTrait, TileType } from './types/tiles';
 // --- Map Generation ---
 export const MAP_WIDTH = 100;
 export const MAP_HEIGHT = 100;
-export const NOISE_SCALE = 0.1;
+export const DETAIL_NOISE_SCALE = 0.089;
+export const CONTINENTAL_NOISE_SCALE = 0.01;
+export const DETAIL_NOISE_WEIGHT = 0.25;
+export const CONTINENTAL_NOISE_WEIGHT = 0.75;
 
-export const TILE_THRESHOLD_WATER = 0.25;
-export const TILE_THRESHOLD_GRASS = 0.85; // mountain when > 0.75
+export const TILE_THRESHOLD_WATER = -0.34;
+export const TILE_THRESHOLD_GRASS = 0.5; // mountain when > 0.75
 
 // --- Cities ---
 export const CITY_COUNT_RANGE = { min: 5, max: 15 };

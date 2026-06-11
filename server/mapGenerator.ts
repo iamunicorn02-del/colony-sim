@@ -4,7 +4,10 @@ import Alea from 'alea';
 import {
   MAP_WIDTH,
   MAP_HEIGHT,
-  NOISE_SCALE,
+  DETAIL_NOISE_SCALE,
+  CONTINENTAL_NOISE_SCALE,
+  DETAIL_NOISE_WEIGHT,
+  CONTINENTAL_NOISE_WEIGHT,
   CITY_COUNT_RANGE,
   MIN_CITY_DISTANCE,
   MAX_CITY_PLACEMENT_ATTEMPTS,
@@ -109,7 +112,7 @@ export function generateMap(seed: number = Math.random()): World {
     const row: Tile[] = [];
 
     for (let x = 0; x < MAP_WIDTH; x++) {
-      const value = (noise(x*NOISE_SCALE, y*NOISE_SCALE)*0.3 + noise(x*NOISE_SCALE/10, y*NOISE_SCALE/10)*0.7 + 1) / 2
+      const value = noise(x*DETAIL_NOISE_SCALE, y*DETAIL_NOISE_SCALE)*DETAIL_NOISE_WEIGHT + noise(x*CONTINENTAL_NOISE_SCALE, y*CONTINENTAL_NOISE_SCALE)*CONTINENTAL_NOISE_WEIGHT
       const type = value < TILE_THRESHOLD_WATER ? TileType.WATER : value < TILE_THRESHOLD_GRASS ? TileType.GRASS : TileType.MOUNTAIN;
       row.push({
         type,
