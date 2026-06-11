@@ -4,6 +4,7 @@ import { DAY_TICK_MS, MAX_EVENT_LOG_SIZE, MAX_TRADE_EVENTS_PER_TICK } from '../a
 import { computeCityStatus, updateWorldForNewDay } from './simulationEngine';
 import { maybeGenerateEvent } from './worldEvents';
 import { resolveTrades } from './trading';
+import { generateHumansForCity } from './humanGenerator';
 
 export type WorldEntry = {
   id: string;
@@ -21,6 +22,18 @@ const worlds = new Map<string, WorldEntry>();
 let nextId = 1;
 
 export function createWorldEntry(world: World): string {
+  // Generate humans for each city
+  for (const city of world.cities) {
+    const count = Math.floor(Math.random() * 6) + 5; // 5-10
+    const humans = generateHumansForCity(city, count);
+    const ids: string[] = [];
+    for (const human of humans) {
+      world.humans[human.id] = human;
+      ids.push(human.id);
+    }
+    city.humanIds = ids;
+  }
+
   const id = `world-${nextId++}`;
   const entry: WorldEntry = {
     id,
