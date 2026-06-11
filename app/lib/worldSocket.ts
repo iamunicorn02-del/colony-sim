@@ -8,8 +8,8 @@ export type TradeLink = {
 };
 
 export type ServerMessage =
-  | { type: 'worldState'; world: World; day: number; eventLog: Event[]; tradeLinks: TradeLink[] }
-  | { type: 'event'; day: number; message: string }
+  | { type: 'worldState'; world: World; day: number; eventLog: Event[]; tradeLinks: TradeLink[]; dailyStory: string | null }
+  | { type: 'event'; day: number; message: string; kind?: string }
   | { type: 'error'; message: string }
   | { type: 'pong' };
 

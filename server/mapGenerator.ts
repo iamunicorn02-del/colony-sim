@@ -15,7 +15,6 @@ import {
   CITY_NAME_SUFFIXES,
   TILE_THRESHOLD_WATER,
   TILE_THRESHOLD_GRASS,
-  CITY_INITIAL_POPULATION_RANGE,
   CITY_INITIAL_FOOD_RANGE,
   CITY_INITIAL_GOLD_RANGE,
   CITY_TRAIT_COUNT,
@@ -75,7 +74,7 @@ const generateCities = (map: TileMap, random: () => number): City[] => {
       name: createCityName(random),
       x,
       y,
-      population: getRandomInt(random, CITY_INITIAL_POPULATION_RANGE.min, CITY_INITIAL_POPULATION_RANGE.max),
+      humanIds: [],
       food: getRandomInt(random, CITY_INITIAL_FOOD_RANGE.min, CITY_INITIAL_FOOD_RANGE.max),
       gold: getRandomInt(random, CITY_INITIAL_GOLD_RANGE.min, CITY_INITIAL_GOLD_RANGE.max),
       traits: pickTraits(random),
@@ -126,5 +125,6 @@ export function generateMap(seed: number = Math.random()): World {
   return {
     map,
     cities: generateCities(map, seededRandom),
+    humans: {},
   };
 }

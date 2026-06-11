@@ -185,7 +185,7 @@ export function MapRenderer({ world, tileSize = 16, tradeLinks, setSelectedCityI
     for (const city of cities) {
       const centerX = (city.x + 0.5) * tileSize;
       const centerY = (city.y + 0.5) * tileSize;
-      const t = Math.min(city.population / CITY_MARKER_MAX_POP, 1);
+      const t = Math.min(city.humanIds.length / CITY_MARKER_MAX_POP, 1);
       const radius = CITY_MARKER_RADIUS_MIN + t * (CITY_MARKER_RADIUS_MAX - CITY_MARKER_RADIUS_MIN);
 
       // --- Territory influence (semi-transparent circle) ---
@@ -257,7 +257,7 @@ export function MapRenderer({ world, tileSize = 16, tradeLinks, setSelectedCityI
 
     for (const city of cities) {
       const centerX = (city.x + 0.5) * tileSize;
-      const t = Math.min(city.population / CITY_MARKER_MAX_POP, 1);
+      const t = Math.min(city.humanIds.length / CITY_MARKER_MAX_POP, 1);
       const radius = CITY_MARKER_RADIUS_MIN + t * (CITY_MARKER_RADIUS_MAX - CITY_MARKER_RADIUS_MIN);
       const labelY = (city.y + 0.5) * tileSize - radius - CITY_LABEL_OFFSET_Y;
 

@@ -4,7 +4,7 @@ import { MapRenderer } from '@/app/components/MapRenderer/MapRenderer';
 import { TileInspector } from '@/app/components/TileInspector/TileInspector';
 import { DayCounter } from '../DayCounter/DayCounter';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Tile, World, Event } from '@/app/types/tiles';
+import { Tile, World, Event, EventKind } from '@/app/types/tiles';
 import { EventLog } from '../EventLog/EventLog';
 import { CityRanking } from '@/app/components/CityRanking/CityRanking';
 import { MiniMap } from '@/app/components/MiniMap/MiniMap';
@@ -82,7 +82,7 @@ export function WorldView() {
               break;
             case 'event':
               setEventLog((prev) =>
-                [...prev, { id: crypto.randomUUID(), day: msg.day, message: msg.message }].slice(-50)
+                [...prev, { id: crypto.randomUUID(), day: msg.day, message: msg.message, kind: (msg.kind as EventKind) ?? 'minor' }].slice(-50)
               );
               break;
             case 'error':

@@ -19,7 +19,7 @@ export interface TradeLink {
  * This means it has a large comfortable surplus it can safely trade away.
  */
 const hasFoodSurplus = (city: City): boolean => {
-  const threshold = city.population * FOOD_CONSUMPTION_PER_CAPITA * 10;
+  const threshold = city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * 10;
   return city.food > threshold;
 };
 
@@ -28,7 +28,7 @@ const hasFoodSurplus = (city: City): boolean => {
  * It is close to starvation and urgently needs to replenish.
  */
 const hasFoodDeficit = (city: City): boolean => {
-  const threshold = city.population * FOOD_CONSUMPTION_PER_CAPITA * 1;
+  const threshold = city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * 1;
   return city.food < threshold;
 };
 
@@ -69,7 +69,7 @@ export const resolveTrades = (
       if (distance(seller, buyer) > effectiveTradeRadius(seller)) continue;
 
       // How much food the seller is willing to part with (everything above the 10-day safety reserve).
-      const surplus = seller.food - seller.population * FOOD_CONSUMPTION_PER_CAPITA * 10;
+      const surplus = seller.food - seller.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * 10;
       const foodToSell = Math.max(1, Math.floor(surplus * TRADE_SURPLUS_FRACTION));
 
       // How much the buyer can afford.
@@ -77,7 +77,7 @@ export const resolveTrades = (
       if (maxAffordable <= 0) continue;
 
       // How much the buyer can actually store.
-      const storageCap = buyer.population * FOOD_STORAGE_PER_CAPITA;
+      const storageCap = buyer.humanIds.length * FOOD_STORAGE_PER_CAPITA;
       const storageRoom = Math.max(0, storageCap - buyer.food);
 
       const food = Math.min(foodToSell, maxAffordable, storageRoom);

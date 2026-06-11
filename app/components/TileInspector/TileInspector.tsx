@@ -64,7 +64,7 @@ export function TileInspector({ selectedTile, selectedCity, tradeLinks, eventLog
         <>
           <span><strong>{selectedCity.name}</strong></span>
           <span>X: {selectedCity.x} &nbsp; Y: {selectedCity.y}</span>
-          <span>Население: {selectedCity.population}</span>
+          <span>Население: {selectedCity.humanIds.length}</span>
           <span>Еда: {selectedCity.food}</span>
           <span>Золото: {selectedCity.gold}</span>
           <span>

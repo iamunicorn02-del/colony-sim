@@ -1,3 +1,7 @@
+import type { Human as _Human } from '../../shared/types';
+export type Human = _Human;
+export type HumanAction = 'idle' | 'moving' | 'eating' | 'resting';
+
 export enum TileType {
   WATER = 'water',
   GRASS = 'grass',
@@ -39,7 +43,7 @@ export type City = {
   name: string;
   x: number;
   y: number;
-  population: number;
+  humanIds: string[];
   food: number;
   gold: number;
   traits: CityTrait[];
@@ -59,6 +63,7 @@ export type TileMap = Tile[][];
 export type World = {
   map: TileMap;
   cities: City[];
+  humans: Record<string, Human>;
 };
 
 /**

@@ -9,9 +9,6 @@ import {
   FOOD_CONSUMPTION_PER_CAPITA,
   FOOD_STORAGE_PER_CAPITA,
   GOLD_TAX_PER_CAPITA,
-  POPULATION_GROWTH_RATE,
-  POPULATION_STARVATION_RATE,
-  MIN_CITY_POPULATION,
   TRAIT_FOOD_BONUS,
   TRAIT_GOLD_BONUS,
   CITY_STATUS_THRESHOLDS,
@@ -26,29 +23,24 @@ const FOOD_PER_TILE: Record<TileType, number> = {
 
 /**
  * Sum the food output of every tile within the harvest radius of a city.
- * Grass is farmland, water is fishing, mountains are barren. This gives each
- * city a terrain-driven food production rate (and therefore carrying capacity).
  */
 const computeFoodProduction = (city: City, map: TileMap): number => {
   let production = 0;
-
   for (let dy = -CITY_HARVEST_RADIUS; dy <= CITY_HARVEST_RADIUS; dy++) {
     for (let dx = -CITY_HARVEST_RADIUS; dx <= CITY_HARVEST_RADIUS; dx++) {
       const x = city.x + dx;
       const y = city.y + dy;
-
       if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) continue;
-
       production += FOOD_PER_TILE[map[y][x].type];
     }
   }
-
   return production;
 };
 
+/** Population is now derived from humanIds.length. */
+const getPopulation = (city: City): number => city.humanIds.length;
+
 export const computeCityStatus = (city: City): City['status'] => {
-  // Golden age / dark age are transient event states that override
-  // the food-based status while their timers are active.
   if (city.goldenAgeDays > 0) {
     return { state: 'golden_age', color: CITY_STATUS_COLORS.golden_age };
   }
@@ -56,8 +48,9 @@ export const computeCityStatus = (city: City): City['status'] => {
     return { state: 'dark_age', color: CITY_STATUS_COLORS.dark_age };
   }
 
-  const ratio = city.population > 0
-    ? city.food / (city.population * FOOD_CONSUMPTION_PER_CAPITA)
+  const pop = getPopulation(city);
+  const ratio = pop > 0
+    ? city.food / (pop * FOOD_CONSUMPTION_PER_CAPITA)
     : 0;
   let state: CityState;
   if (ratio < CITY_STATUS_THRESHOLDS.starving) state = 'starving';
@@ -68,7 +61,6 @@ export const computeCityStatus = (city: City): City['status'] => {
 };
 
 const updateCityForNewDay = (city: City, map: TileMap): City => {
-  // --- Trait bonuses ---
   const foodBonus = city.traits.reduce(
     (sum, t) => sum + (TRAIT_FOOD_BONUS[t] || 0), 0,
   );
@@ -76,7 +68,6 @@ const updateCityForNewDay = (city: City, map: TileMap): City => {
     (sum, t) => sum + (TRAIT_GOLD_BONUS[t] || 0), 0,
   );
 
-  // --- Special state multipliers ---
   let stateFoodMult = 1;
   let stateGoldMult = 1;
   if (city.goldenAgeDays > 0) {
@@ -88,41 +79,21 @@ const updateCityForNewDay = (city: City, map: TileMap): City => {
     stateGoldMult -= 0.2;
   }
 
-  // --- Food ---
   const production = computeFoodProduction(city, map) * (1 + foodBonus) * stateFoodMult;
-  const consumption = city.population * FOOD_CONSUMPTION_PER_CAPITA;
+  const consumption = getPopulation(city) * FOOD_CONSUMPTION_PER_CAPITA;
   const netFood = production - consumption;
 
-  const storageCap = city.population * FOOD_STORAGE_PER_CAPITA;
+  const storageCap = getPopulation(city) * FOOD_STORAGE_PER_CAPITA;
   const food = Math.max(0, Math.min(storageCap, city.food + netFood));
 
-  // --- Population ---
-  let population = city.population;
-  if (netFood > 0) {
-    population += Math.ceil(city.population * POPULATION_GROWTH_RATE);
-  } else if (city.food <= 0) {
-    population -= Math.ceil(city.population * POPULATION_STARVATION_RATE);
-  }
+  const gold = city.gold + getPopulation(city) * GOLD_TAX_PER_CAPITA * (1 + goldBonus) * stateGoldMult;
 
-  // Epidemic: extra population loss
-  if (city.epidemicDays > 0) {
-    const loss = Math.ceil(city.population * 0.03);
-    population -= loss;
-  }
-
-  population = Math.max(MIN_CITY_POPULATION, population);
-
-  // --- Gold ---
-  const gold = city.gold + population * GOLD_TAX_PER_CAPITA * (1 + goldBonus) * stateGoldMult;
-
-  // --- Decrement temporary state timers ---
   const goldenAgeDays = Math.max(0, city.goldenAgeDays - 1);
   const darkAgeDays = Math.max(0, city.darkAgeDays - 1);
   const epidemicDays = Math.max(0, city.epidemicDays - 1);
 
   const updated: City = {
     ...city,
-    population,
     food: Math.round(food),
     gold: Math.round(gold),
     goldenAgeDays,
@@ -134,8 +105,21 @@ const updateCityForNewDay = (city: City, map: TileMap): City => {
 };
 
 export const updateWorldForNewDay = (world: World): World => {
-  return {
+  const updatedWorld: World = {
     ...world,
     cities: world.cities.map((city) => updateCityForNewDay(city, world.map)),
   };
+
+  // Update humans
+  for (const human of Object.values(world.humans)) {
+    const h = { ...human };
+    h.hunger = Math.max(0, h.hunger - (Math.floor(Math.random() * 6) + 5));
+    h.energy = Math.max(0, h.energy - (Math.floor(Math.random() * 5) + 3));
+    if (h.hunger < 20) h.currentAction = 'eating';
+    else if (h.energy < 20) h.currentAction = 'resting';
+    else h.currentAction = 'idle';
+    updatedWorld.humans[h.id] = h;
+  }
+
+  return updatedWorld;
 };

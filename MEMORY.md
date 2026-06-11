@@ -1,0 +1,1 @@
+- [Улучшение самобытности городов для зрителя](memory/city-personality-plan.md) — план из 4 фаз (traits, events, visuals, UI); Фаза 1 выполнена
