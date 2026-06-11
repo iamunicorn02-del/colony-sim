@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Tile, World } from '@/app/types/tiles';
+import { Tile, World, Human } from '@/app/types/tiles';
 import type { TradeLink } from '@/app/lib/worldSocket';
 import styles from './MapRenderer.module.css';
 import {
@@ -23,6 +23,7 @@ import {
 
 interface MapRendererProps {
   world: World;
+  humans: Record<string, Human>;
   tileSize?: number;
   tradeLinks: TradeLink[];
   setSelectedTile: (tile: Tile | null) => void;
@@ -34,6 +35,10 @@ interface Camera {
   y: number;
   scale: number;
 }
+
+const HUMAN_DOT_RADIUS = 4;
+const HUMAN_DOT_COLOR = '#3b82f6';
+const HUMAN_DOT_STROKE = '#1e40af';
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -47,7 +52,7 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
   return { min: viewportSize - contentSize, max: 0 };
 };
 
-export function MapRenderer({ world, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile }: MapRendererProps) {
+export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile }: MapRendererProps) {
   const { map, cities } = world;
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
@@ -278,7 +283,21 @@ export function MapRenderer({ world, tileSize = 16, tradeLinks, setSelectedCityI
       context.fillStyle = CITY_LABEL_COLOR;
       context.fillText(label, centerX, labelY);
     }
-  }, [cities, tradeLinks, map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
+
+    // Human dots
+    for (const human of Object.values(humans)) {
+      const hx = (human.x + 0.5) * tileSize;
+      const hy = (human.y + 0.5) * tileSize;
+
+      context.beginPath();
+      context.arc(hx, hy, HUMAN_DOT_RADIUS, 0, Math.PI * 2);
+      context.fillStyle = HUMAN_DOT_COLOR;
+      context.fill();
+      context.lineWidth = 1;
+      context.strokeStyle = HUMAN_DOT_STROKE;
+      context.stroke();
+    }
+  }, [cities, humans, tradeLinks, map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
 
   useEffect(() => {
     const viewport = containerRef.current;

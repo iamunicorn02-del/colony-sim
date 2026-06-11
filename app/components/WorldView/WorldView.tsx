@@ -136,7 +136,7 @@ export function WorldView() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-black font-sans">
       <main className="h-full w-full">
-        <MapRenderer world={world} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} />
+        <MapRenderer world={world} humans={humans} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} />
         <DayCounter day={day} />
         {dailyStory && (
           <div className="absolute top-12 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-sm bg-black/60 text-white border border-white/10 pointer-events-none animate-pulse">
