@@ -28,6 +28,7 @@ interface MapRendererProps {
   tradeLinks: TradeLink[];
   setSelectedTile: (tile: Tile | null) => void;
   setSelectedCityId: (cityId: string | null) => void;
+  onHumanClick?: (humanId: string) => void;
 }
 
 interface Camera {
@@ -52,7 +53,7 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
   return { min: viewportSize - contentSize, max: 0 };
 };
 
-export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile }: MapRendererProps) {
+export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile, onHumanClick }: MapRendererProps) {
   const { map, cities } = world;
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
@@ -400,10 +401,30 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
 
     if (dragDistance <= DRAG_CLICK_THRESHOLD) {
       const city = getCityFromPointer(e.clientX, e.clientY);
-      setSelectedCityId(city ? city.id : null);
-      setSelectedTile(city ? null : getTileFromPointer(e.clientX, e.clientY));
+      if (city) {
+        setSelectedCityId(city.id);
+        setSelectedTile(null);
+        return;
+      }
+
+      if (onHumanClick) {
+        const point = getMapPointFromPointer(e.clientX, e.clientY);
+        if (point) {
+          const clickedHuman = Object.values(humans).find((human) => {
+            const hx = (human.x + 0.5) * tileSize;
+            const hy = (human.y + 0.5) * tileSize;
+            return Math.hypot(point.x - hx, point.y - hy) <= HUMAN_DOT_RADIUS + 5;
+          });
+          if (clickedHuman) {
+            onHumanClick(clickedHuman.id);
+            return;
+          }
+        }
+      }
+
+      setSelectedTile(getTileFromPointer(e.clientX, e.clientY));
     }
-  }, [getCityFromPointer, getTileFromPointer]);
+  }, [getCityFromPointer, getTileFromPointer, getMapPointFromPointer, humans, onHumanClick, tileSize]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
