@@ -1,4 +1,4 @@
-import { TileType } from './types/tiles';
+import { CityTrait, TileType } from './types/tiles';
 
 // --- Map Generation ---
 export const MAP_WIDTH = 100;
@@ -90,6 +90,70 @@ export const TRADE_SURPLUS_FRACTION = 0.1;
 export const TRADE_PRICE_PER_FOOD = 5;
 // Max number of trade events logged per tick (to avoid spamming the log).
 export const MAX_TRADE_EVENTS_PER_TICK = 3;
+
+// --- City Traits ---
+// How many traits a city gets at founding (randomly picked from the pool).
+export const CITY_TRAIT_COUNT = { min: 2, max: 3 };
+// All available traits — mapGenerator picks from this list.
+export const CITY_TRAIT_POOL: CityTrait[] = [
+  CityTrait.WARLIKE,
+  CityTrait.TRADER,
+  CityTrait.AGRICULTURAL,
+  CityTrait.FORTUNATE,
+  CityTrait.DOOMED,
+  CityTrait.EXPANSIONIST,
+  CityTrait.ISOLATED,
+];
+// Per-trait multipliers applied in the simulation.
+export const TRAIT_FOOD_BONUS: Record<CityTrait, number> = {
+  [CityTrait.WARLIKE]: 0,
+  [CityTrait.TRADER]: 0,
+  [CityTrait.AGRICULTURAL]: 0.25,
+  [CityTrait.FORTUNATE]: 0,
+  [CityTrait.DOOMED]: -0.1,
+  [CityTrait.EXPANSIONIST]: 0,
+  [CityTrait.ISOLATED]: 0,
+};
+export const TRAIT_GOLD_BONUS: Record<CityTrait, number> = {
+  [CityTrait.WARLIKE]: 0,
+  [CityTrait.TRADER]: 0.3,
+  [CityTrait.AGRICULTURAL]: 0,
+  [CityTrait.FORTUNATE]: 0.1,
+  [CityTrait.DOOMED]: 0,
+  [CityTrait.EXPANSIONIST]: 0,
+  [CityTrait.ISOLATED]: 0,
+};
+export const TRAIT_EVENT_RESIST: Record<CityTrait, number> = {
+  [CityTrait.WARLIKE]: 0,
+  [CityTrait.TRADER]: 0,
+  [CityTrait.AGRICULTURAL]: 0,
+  [CityTrait.FORTUNATE]: 0.3,
+  [CityTrait.DOOMED]: -0.2,
+  [CityTrait.EXPANSIONIST]: 0,
+  [CityTrait.ISOLATED]: 0.15,
+};
+// City status thresholds (multiples of food-per-capita).
+export const CITY_STATUS_THRESHOLDS = {
+  starving: 0.5,       // food < pop * consumption * 0.5
+  struggling: 2,       // food < pop * consumption * 2
+  stable: 5,           // food < pop * consumption * 5
+  thriving: 10,        // food < pop * consumption * 10
+  // >= thriving => golden_age candidate
+};
+// Status → marker color (used by MapRenderer).
+export const CITY_STATUS_COLORS: Record<string, string> = {
+  starving: '#dc2626',     // red
+  struggling: '#f59e0b',   // amber
+  stable: '#facc15',       // yellow
+  thriving: '#22c55e',     // green
+  golden_age: '#eab308',   // gold
+  dark_age: '#6b7280',     // grey
+};
+// Marker radius range (px), mapped against population.
+export const CITY_MARKER_RADIUS_MIN = 4;
+export const CITY_MARKER_RADIUS_MAX = 14;
+// Population that maps to max radius.
+export const CITY_MARKER_MAX_POP = 2000;
 
 // --- Rendering ---
 export const MIN_SCALE = 0.2;

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { City, Tile, World } from '@/app/types/tiles';
+import { Tile, World } from '@/app/types/tiles';
 import type { TradeLink } from '@/app/lib/worldSocket';
 import styles from './MapRenderer.module.css';
 import {
@@ -7,13 +7,15 @@ import {
   MAX_SCALE,
   KEYBOARD_PAN_DISTANCE,
   DRAG_CLICK_THRESHOLD,
-  CITY_MARKER_RADIUS,
   CITY_LABEL_FONT,
   CITY_LABEL_COLOR,
   CITY_LABEL_OUTLINE_COLOR,
   CITY_LABEL_OUTLINE_WIDTH,
   CITY_LABEL_OFFSET_Y,
   TILE_COLORS,
+  CITY_MARKER_RADIUS_MIN,
+  CITY_MARKER_RADIUS_MAX,
+  CITY_MARKER_MAX_POP,
 } from '@/app/config';
 
 interface MapRendererProps {
@@ -180,17 +182,30 @@ export function MapRenderer({ world, tileSize = 16, tradeLinks, setSelectedCityI
     for (const city of cities) {
       const centerX = (city.x + 0.5) * tileSize;
       const centerY = (city.y + 0.5) * tileSize;
+      // Radius scales with population.
+      const t = Math.min(city.population / CITY_MARKER_MAX_POP, 1);
+      const radius = CITY_MARKER_RADIUS_MIN + t * (CITY_MARKER_RADIUS_MAX - CITY_MARKER_RADIUS_MIN);
+
+      // Outer glow for golden-age / dark-age cities.
+      if (city.status.state === 'golden_age' || city.status.state === 'dark_age') {
+        context.beginPath();
+        context.arc(centerX, centerY, radius + 4, 0, Math.PI * 2);
+        context.fillStyle = city.status.state === 'golden_age'
+          ? 'rgba(234,179,8,0.25)'
+          : 'rgba(107,114,128,0.2)';
+        context.fill();
+      }
 
       context.beginPath();
-      context.arc(centerX, centerY, CITY_MARKER_RADIUS, 0, Math.PI * 2);
-      context.fillStyle = '#f5c542';
+      context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      context.fillStyle = city.status.color;
       context.fill();
       context.lineWidth = 2;
-      context.strokeStyle = '#3b2600';
+      context.strokeStyle = '#1b1302';
       context.stroke();
 
       context.beginPath();
-      context.arc(centerX, centerY, 2, 0, Math.PI * 2);
+      context.arc(centerX, centerY, Math.max(1, radius * 0.3), 0, Math.PI * 2);
       context.fillStyle = '#1b1302';
       context.fill();
     }
@@ -206,11 +221,26 @@ export function MapRenderer({ world, tileSize = 16, tradeLinks, setSelectedCityI
 
     for (const city of cities) {
       const centerX = (city.x + 0.5) * tileSize;
-      const labelY = (city.y + 0.5) * tileSize - CITY_MARKER_RADIUS - CITY_LABEL_OFFSET_Y;
+      const t = Math.min(city.population / CITY_MARKER_MAX_POP, 1);
+      const radius = CITY_MARKER_RADIUS_MIN + t * (CITY_MARKER_RADIUS_MAX - CITY_MARKER_RADIUS_MIN);
+      const labelY = (city.y + 0.5) * tileSize - radius - CITY_LABEL_OFFSET_Y;
 
-      context.strokeText(city.name, centerX, labelY);
+      // Trait icons as tiny text prefix.
+      const traitIcons: Record<string, string> = {
+        warlike: '⚔',
+        trader: '⚖',
+        agricultural: '🌾',
+        fortunate: '🍀',
+        doomed: '💀',
+        expansionist: '🏗',
+        isolated: '🏔',
+      };
+      const icons = city.traits.map((tr) => traitIcons[tr] || '').join('');
+      const label = icons ? `${icons} ${city.name}` : city.name;
+
+      context.strokeText(label, centerX, labelY);
       context.fillStyle = CITY_LABEL_COLOR;
-      context.fillText(city.name, centerX, labelY);
+      context.fillText(label, centerX, labelY);
     }
   }, [cities, tradeLinks, map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
 

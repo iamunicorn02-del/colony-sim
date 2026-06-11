@@ -1,4 +1,4 @@
-import { City, TileType, Tile, TileMap, World } from '../app/types/tiles';
+import { City, CityTrait, TileType, Tile, TileMap, World } from '../app/types/tiles';
 import { createNoise2D } from "simplex-noise"
 import Alea from 'alea';
 import {
@@ -15,6 +15,11 @@ import {
   CITY_INITIAL_POPULATION_RANGE,
   CITY_INITIAL_FOOD_RANGE,
   CITY_INITIAL_GOLD_RANGE,
+  CITY_TRAIT_COUNT,
+  CITY_TRAIT_POOL,
+  CITY_STATUS_THRESHOLDS,
+  CITY_STATUS_COLORS,
+  FOOD_CONSUMPTION_PER_CAPITA,
 } from '../app/config';
 
 const getRandomInt = (random: () => number, min: number, max: number) =>
@@ -29,6 +34,25 @@ const isFarEnoughFromCities = (x: number, y: number, cities: City[]) => {
 
     return dx * dx + dy * dy >= minDistanceSquared;
   });
+};
+
+/** Pick N random distinct traits from the pool. */
+const pickTraits = (random: () => number): CityTrait[] => {
+  const count = Math.floor(random() * (CITY_TRAIT_COUNT.max - CITY_TRAIT_COUNT.min + 1)) + CITY_TRAIT_COUNT.min;
+  const shuffled = [...CITY_TRAIT_POOL].sort(() => random() - 0.5);
+  return shuffled.slice(0, count);
+};
+
+/** Compute initial city status from its food reserves. */
+const computeStatus = (city: City) => {
+  const ratio = city.food / (city.population * FOOD_CONSUMPTION_PER_CAPITA);
+  let state: string;
+  if (ratio < CITY_STATUS_THRESHOLDS.starving) state = 'starving';
+  else if (ratio < CITY_STATUS_THRESHOLDS.struggling) state = 'struggling';
+  else if (ratio < CITY_STATUS_THRESHOLDS.stable) state = 'stable';
+  else if (ratio < CITY_STATUS_THRESHOLDS.thriving) state = 'thriving';
+  else state = 'thriving';
+  return { state, color: CITY_STATUS_COLORS[state] };
 };
 
 const createCityName = (random: () => number) => {
@@ -53,7 +77,7 @@ const generateCities = (map: TileMap, random: () => number): City[] => {
       continue;
     }
 
-    cities.push({
+    const city: City = {
       id: `city-${cities.length + 1}`,
       name: createCityName(random),
       x,
@@ -61,7 +85,11 @@ const generateCities = (map: TileMap, random: () => number): City[] => {
       population: getRandomInt(random, CITY_INITIAL_POPULATION_RANGE.min, CITY_INITIAL_POPULATION_RANGE.max),
       food: getRandomInt(random, CITY_INITIAL_FOOD_RANGE.min, CITY_INITIAL_FOOD_RANGE.max),
       gold: getRandomInt(random, CITY_INITIAL_GOLD_RANGE.min, CITY_INITIAL_GOLD_RANGE.max),
-    });
+      traits: pickTraits(random),
+      status: { state: 'stable', color: CITY_STATUS_COLORS.stable },
+    };
+    city.status = computeStatus(city);
+    cities.push(city);
   }
 
   return cities;

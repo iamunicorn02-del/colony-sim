@@ -12,6 +12,10 @@ import {
   POPULATION_GROWTH_RATE,
   POPULATION_STARVATION_RATE,
   MIN_CITY_POPULATION,
+  TRAIT_FOOD_BONUS,
+  TRAIT_GOLD_BONUS,
+  CITY_STATUS_THRESHOLDS,
+  CITY_STATUS_COLORS,
 } from '../app/config';
 
 const FOOD_PER_TILE: Record<TileType, number> = {
@@ -42,9 +46,31 @@ const computeFoodProduction = (city: City, map: TileMap): number => {
   return production;
 };
 
+/** Compute the city's status from its current food reserves. */
+export const computeCityStatus = (city: City): City['status'] => {
+  const ratio = city.population > 0
+    ? city.food / (city.population * FOOD_CONSUMPTION_PER_CAPITA)
+    : 0;
+  let state: string;
+  if (ratio < CITY_STATUS_THRESHOLDS.starving) state = 'starving';
+  else if (ratio < CITY_STATUS_THRESHOLDS.struggling) state = 'struggling';
+  else if (ratio < CITY_STATUS_THRESHOLDS.stable) state = 'stable';
+  else if (ratio < CITY_STATUS_THRESHOLDS.thriving) state = 'thriving';
+  else state = 'thriving';
+  return { state, color: CITY_STATUS_COLORS[state] || '#facc15' };
+};
+
 const updateCityForNewDay = (city: City, map: TileMap): City => {
+  // --- Trait bonuses ---
+  const foodBonus = city.traits.reduce(
+    (sum, t) => sum + (TRAIT_FOOD_BONUS[t] || 0), 0,
+  );
+  const goldBonus = city.traits.reduce(
+    (sum, t) => sum + (TRAIT_GOLD_BONUS[t] || 0), 0,
+  );
+
   // --- Food ---
-  const production = computeFoodProduction(city, map);
+  const production = computeFoodProduction(city, map) * (1 + foodBonus);
   const consumption = city.population * FOOD_CONSUMPTION_PER_CAPITA;
   const netFood = production - consumption;
 
@@ -52,8 +78,6 @@ const updateCityForNewDay = (city: City, map: TileMap): City => {
   const food = Math.max(0, Math.min(storageCap, city.food + netFood));
 
   // --- Population ---
-  // Surplus food + room in the granary grows the city; an empty granary while
-  // running a deficit starves it.
   let population = city.population;
   if (netFood > 0) {
     population += Math.ceil(city.population * POPULATION_GROWTH_RATE);
@@ -63,14 +87,16 @@ const updateCityForNewDay = (city: City, map: TileMap): City => {
   population = Math.max(MIN_CITY_POPULATION, population);
 
   // --- Gold ---
-  const gold = city.gold + population * GOLD_TAX_PER_CAPITA;
+  const gold = city.gold + population * GOLD_TAX_PER_CAPITA * (1 + goldBonus);
 
-  return {
+  const updated: City = {
     ...city,
     population,
     food: Math.round(food),
     gold: Math.round(gold),
   };
+  updated.status = computeCityStatus(updated);
+  return updated;
 };
 
 export const updateWorldForNewDay = (world: World): World => {

@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { Event, World } from '../app/types/tiles';
 import { DAY_TICK_MS, MAX_EVENT_LOG_SIZE, MAX_TRADE_EVENTS_PER_TICK } from '../app/config';
-import { updateWorldForNewDay } from './simulationEngine';
+import { computeCityStatus, updateWorldForNewDay } from './simulationEngine';
 import { maybeGenerateEvent } from './worldEvents';
 import { resolveTrades } from './trading';
 
@@ -74,7 +74,12 @@ function tickWorld(id: string) {
 
   // Resolve trade between nearby cities.
   const tradeResult = resolveTrades(entry.world.cities, entry.world.map);
-  entry.world = { ...entry.world, cities: tradeResult.cities };
+  // Recompute status after trades change food/gold balances.
+  const citiesAfterTrade = tradeResult.cities.map((c) => ({
+    ...c,
+    status: computeCityStatus(c),
+  }));
+  entry.world = { ...entry.world, cities: citiesAfterTrade };
   for (let i = 0; i < Math.min(tradeResult.trades.length, MAX_TRADE_EVENTS_PER_TICK); i++) {
     const t = tradeResult.trades[i];
     const seller = entry.world.cities.find((c) => c.id === t.sellerId);

@@ -4,7 +4,7 @@ import { MapRenderer } from '@/app/components/MapRenderer/MapRenderer';
 import { TileInspector } from '@/app/components/TileInspector/TileInspector';
 import { DayCounter } from '../DayCounter/DayCounter';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Tile, City, World, Event } from '@/app/types/tiles';
+import { Tile, World, Event } from '@/app/types/tiles';
 import { EventLog } from '../EventLog/EventLog';
 import { CityRanking } from '@/app/components/CityRanking/CityRanking';
 import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';

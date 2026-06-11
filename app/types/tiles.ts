@@ -10,6 +10,24 @@ export interface Tile {
   y: number;
 }
 
+export enum CityTrait {
+  WARLIKE = 'warlike',
+  TRADER = 'trader',
+  AGRICULTURAL = 'agricultural',
+  FORTUNATE = 'fortunate',
+  DOOMED = 'doomed',
+  EXPANSIONIST = 'expansionist',
+  ISOLATED = 'isolated',
+}
+
+/** Transient state derived from simulation — recomputed each tick. */
+export type CityStatus = {
+  /** One of: 'thriving' | 'stable' | 'struggling' | 'starving' | 'golden_age' | 'dark_age' */
+  state: string;
+  /** Trait-derived visual tint applied by the renderer. */
+  color: string;
+};
+
 export type City = {
   id: string;
   name: string;
@@ -18,6 +36,8 @@ export type City = {
   population: number;
   food: number;
   gold: number;
+  traits: CityTrait[];
+  status: CityStatus;
 };
 
 export type TileMap = Tile[][];

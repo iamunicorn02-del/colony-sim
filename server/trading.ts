@@ -1,4 +1,4 @@
-import { City, TileMap } from '../app/types/tiles';
+import { City, CityTrait, TileMap } from '../app/types/tiles';
 import {
   TRADE_RADIUS,
   TRADE_SURPLUS_FRACTION,
@@ -35,6 +35,13 @@ const hasFoodDeficit = (city: City): boolean => {
 const distance = (a: City, b: City): number =>
   Math.hypot(a.x - b.x, a.y - b.y);
 
+/** Isolated cities only trade when the partner is unusually close. */
+const effectiveTradeRadius = (city: City): number => {
+  if (city.traits.includes(CityTrait.ISOLATED)) return TRADE_RADIUS * 0.5;
+  if (city.traits.includes(CityTrait.TRADER)) return TRADE_RADIUS * 1.3;
+  return TRADE_RADIUS;
+};
+
 /**
  * Resolve all trade deals for the current day.
  * For each pair of cities within TRADE_RADIUS where one has a surplus and
@@ -59,7 +66,7 @@ export const resolveTrades = (
       if (i === j) continue;
       const buyer = updated[j];
       if (!hasFoodDeficit(buyer)) continue;
-      if (distance(seller, buyer) > TRADE_RADIUS) continue;
+      if (distance(seller, buyer) > effectiveTradeRadius(seller)) continue;
 
       // How much food the seller is willing to part with (everything above the 10-day safety reserve).
       const surplus = seller.food - seller.population * FOOD_CONSUMPTION_PER_CAPITA * 10;
