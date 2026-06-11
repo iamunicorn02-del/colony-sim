@@ -25,11 +25,16 @@
 }
 
 .traitsHeader,
-.tradeHeader {
-  margin-top: 4px;
+.tradeHeader,
+.timersHeader,
+.relationsHeader,
+.historyHeader {
+  margin-top: 6px;
   color: #f5c542;
   font-size: 11px;
   font-weight: 600;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 4px;
 }
 
 .traitEntry {
@@ -38,8 +43,43 @@
   font-size: 12px;
 }
 
+.timerEntry_golden {
+  padding-left: 8px;
+  color: #fbbf24;
+  font-size: 12px;
+}
+
+.timerEntry_dark {
+  padding-left: 8px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.timerEntry_epidemic {
+  padding-left: 8px;
+  color: #f87171;
+  font-size: 12px;
+}
+
+.relationEntry {
+  padding-left: 8px;
+  color: #fde68a;
+  font-size: 12px;
+}
+
 .tradeEntry {
   padding-left: 8px;
   color: #c8e0ff;
   font-size: 12px;
+}
+
+.historyEntry {
+  padding-left: 8px;
+  color: #d1d5db;
+  font-size: 11px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }

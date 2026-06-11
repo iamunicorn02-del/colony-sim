@@ -5,8 +5,8 @@ export const MAP_WIDTH = 100;
 export const MAP_HEIGHT = 100;
 export const NOISE_SCALE = 0.1;
 
-export const TILE_THRESHOLD_WATER = 0.35;
-export const TILE_THRESHOLD_GRASS = 0.75; // mountain when > 0.75
+export const TILE_THRESHOLD_WATER = 0.25;
+export const TILE_THRESHOLD_GRASS = 0.85; // mountain when > 0.75
 
 // --- Cities ---
 export const CITY_COUNT_RANGE = { min: 5, max: 15 };
@@ -154,6 +154,17 @@ export const CITY_MARKER_RADIUS_MIN = 4;
 export const CITY_MARKER_RADIUS_MAX = 14;
 // Population that maps to max radius.
 export const CITY_MARKER_MAX_POP = 2000;
+
+// --- City relationships (visual border color on the map) ---
+export const CITY_RELATIONSHIP_COLORS = {
+  ally: '#22c66b',
+  enemy: '#ef4444',
+  neutral: '#1b1302',
+};
+
+// --- City special-state glow ---
+export const CITY_GOLDEN_AGE_GLOW = 'rgba(234,179,8,0.35)';
+export const CITY_DARK_AGE_GLOW = 'rgba(107,114,128,0.3)';
 
 // --- Rendering ---
 export const MIN_SCALE = 0.2;

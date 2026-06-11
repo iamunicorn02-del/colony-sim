@@ -17,10 +17,8 @@ import {
   CITY_INITIAL_GOLD_RANGE,
   CITY_TRAIT_COUNT,
   CITY_TRAIT_POOL,
-  CITY_STATUS_THRESHOLDS,
-  CITY_STATUS_COLORS,
-  FOOD_CONSUMPTION_PER_CAPITA,
 } from '../app/config';
+import { computeCityStatus } from './simulationEngine';
 
 const getRandomInt = (random: () => number, min: number, max: number) =>
   Math.floor(random() * (max - min + 1)) + min;
@@ -39,20 +37,12 @@ const isFarEnoughFromCities = (x: number, y: number, cities: City[]) => {
 /** Pick N random distinct traits from the pool. */
 const pickTraits = (random: () => number): CityTrait[] => {
   const count = Math.floor(random() * (CITY_TRAIT_COUNT.max - CITY_TRAIT_COUNT.min + 1)) + CITY_TRAIT_COUNT.min;
-  const shuffled = [...CITY_TRAIT_POOL].sort(() => random() - 0.5);
-  return shuffled.slice(0, count);
-};
-
-/** Compute initial city status from its food reserves. */
-const computeStatus = (city: City) => {
-  const ratio = city.food / (city.population * FOOD_CONSUMPTION_PER_CAPITA);
-  let state: string;
-  if (ratio < CITY_STATUS_THRESHOLDS.starving) state = 'starving';
-  else if (ratio < CITY_STATUS_THRESHOLDS.struggling) state = 'struggling';
-  else if (ratio < CITY_STATUS_THRESHOLDS.stable) state = 'stable';
-  else if (ratio < CITY_STATUS_THRESHOLDS.thriving) state = 'thriving';
-  else state = 'thriving';
-  return { state, color: CITY_STATUS_COLORS[state] };
+  const pool = [...CITY_TRAIT_POOL];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
 };
 
 const createCityName = (random: () => number) => {
@@ -86,9 +76,13 @@ const generateCities = (map: TileMap, random: () => number): City[] => {
       food: getRandomInt(random, CITY_INITIAL_FOOD_RANGE.min, CITY_INITIAL_FOOD_RANGE.max),
       gold: getRandomInt(random, CITY_INITIAL_GOLD_RANGE.min, CITY_INITIAL_GOLD_RANGE.max),
       traits: pickTraits(random),
-      status: { state: 'stable', color: CITY_STATUS_COLORS.stable },
+      status: { state: 'stable', color: '#facc15' },
+      relationships: {},
+      goldenAgeDays: 0,
+      darkAgeDays: 0,
+      epidemicDays: 0,
     };
-    city.status = computeStatus(city);
+    city.status = computeCityStatus(city);
     cities.push(city);
   }
 
@@ -115,7 +109,7 @@ export function generateMap(seed: number = Math.random()): World {
     const row: Tile[] = [];
 
     for (let x = 0; x < MAP_WIDTH; x++) {
-      const value = (noise(x*NOISE_SCALE, y*NOISE_SCALE) + 1) / 2
+      const value = (noise(x*NOISE_SCALE, y*NOISE_SCALE)*0.3 + noise(x*NOISE_SCALE/10, y*NOISE_SCALE/10)*0.7 + 1) / 2
       const type = value < TILE_THRESHOLD_WATER ? TileType.WATER : value < TILE_THRESHOLD_GRASS ? TileType.GRASS : TileType.MOUNTAIN;
       row.push({
         type,

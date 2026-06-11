@@ -10,6 +10,8 @@ export type WorldEntry = {
   world: World;
   day: number;
   eventLog: Event[];
+  /** Short description of the most important event today (for spectator UI). */
+  dailyStory: string | null;
   tickInterval: ReturnType<typeof setInterval>;
   clients: Set<WebSocket>;
 };
@@ -25,6 +27,7 @@ export function createWorldEntry(world: World): string {
     world,
     day: 0,
     eventLog: [],
+    dailyStory: null,
     tickInterval: setInterval(() => tickWorld(id), DAY_TICK_MS),
     clients: new Set(),
   };
@@ -89,6 +92,9 @@ function tickWorld(id: string) {
       id: `trade-${entry.day}-${i}`,
       day: entry.day,
       message: `Trade: ${seller.name} → ${buyer.name} (${t.food} food for ${t.gold} gold)`,
+      kind: 'caravan' as const,
+      affectedCityIds: [t.sellerId, t.buyerId],
+      severity: 'minor' as const,
     });
   }
 
@@ -97,6 +103,24 @@ function tickWorld(id: string) {
     entry.world = result.world;
     entry.eventLog.push(result.event);
   }
+
+  // --- Generate daily story (most important event of the day) ---
+  let dailyStory: string | null = null;
+  if (result && result.event.severity === 'cataclysmic') {
+    dailyStory = result.event.message;
+  } else if (result && result.event.severity === 'major') {
+    dailyStory = result.event.message;
+  } else if (result) {
+    dailyStory = result.event.message;
+  } else if (tradeResult.trades.length > 0) {
+    const t = tradeResult.trades[0];
+    const seller = entry.world.cities.find((c) => c.id === t.sellerId);
+    const buyer = entry.world.cities.find((c) => c.id === t.buyerId);
+    if (seller && buyer) {
+      dailyStory = `💰 ${seller.name} traded ${t.food} food to ${buyer.name}`;
+    }
+  }
+  entry.dailyStory = dailyStory;
 
   if (entry.eventLog.length > MAX_EVENT_LOG_SIZE) {
     entry.eventLog = entry.eventLog.slice(-MAX_EVENT_LOG_SIZE);
@@ -107,6 +131,7 @@ function tickWorld(id: string) {
     world: entry.world,
     day: entry.day,
     eventLog: entry.eventLog,
+    dailyStory: entry.dailyStory,
     tradeLinks: tradeResult.trades,
   });
 }

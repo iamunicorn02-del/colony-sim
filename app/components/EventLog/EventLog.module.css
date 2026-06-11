@@ -8,7 +8,7 @@
 .eventLog {
     position: relative;
 
-    width: 500px;
+    width: 550px;
     max-width: 90%;
 
     padding: 24px;
@@ -19,7 +19,7 @@
 }
 
 .overlay {
-    position:fixed;
+    position: fixed;
     inset: 0;
 
     display: flex;
@@ -31,7 +31,7 @@
 }
 
 .closeButton {
-    position:absolute;
+    position: absolute;
 
     top: 10px;
     right: 10px;
@@ -44,8 +44,37 @@
     cursor: pointer;
 }
 
+.filterRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.filterChip {
+    padding: 3px 10px;
+    border: 1px solid #444;
+    border-radius: 12px;
+    background: transparent;
+    color: #ccc;
+    font-size: 12px;
+    cursor: pointer;
+    text-transform: capitalize;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.filterChip:hover {
+    background: #222;
+}
+
+.filterChipActive {
+    background: #333;
+    border-color: #888;
+    color: #fff;
+}
+
 .eventList {
-    margin-top: 16px;
+    margin-top: 12px;
     max-height: 400px;
     overflow-y: auto;
 }
@@ -55,26 +84,42 @@
     border-bottom: 1px solid #333;
     color: #eee;
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.kindDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .day {
     font-weight: bold;
     color: #4fc3f7;
+    white-space: nowrap;
 }
 
 .message {
     flex: 1;
-    margin-left: 8px;
+}
+
+.empty {
+    padding: 16px 0;
+    color: #666;
+    text-align: center;
 }
 
 /* Optional: style for scrollbar */
 .eventList::-webkit-scrollbar {
     width: 8px;
 }
+
 .eventList::-webkit-scrollbar-track {
     background: #1a1a1a;
 }
+
 .eventList::-webkit-scrollbar-thumb {
     background-color: #444;
     border-radius: 4px;

@@ -20,11 +20,17 @@ export enum CityTrait {
   ISOLATED = 'isolated',
 }
 
+export type CityState =
+  | 'starving'
+  | 'struggling'
+  | 'stable'
+  | 'thriving'
+  | 'golden_age'
+  | 'dark_age';
+
 /** Transient state derived from simulation — recomputed each tick. */
 export type CityStatus = {
-  /** One of: 'thriving' | 'stable' | 'struggling' | 'starving' | 'golden_age' | 'dark_age' */
-  state: string;
-  /** Trait-derived visual tint applied by the renderer. */
+  state: CityState;
   color: string;
 };
 
@@ -38,6 +44,14 @@ export type City = {
   gold: number;
   traits: CityTrait[];
   status: CityStatus;
+  /** Relations with other cities — ally, enemy or neutral. */
+  relationships: Record<string, 'ally' | 'enemy' | 'neutral'>;
+  /** Days remaining while city is in golden age (special prosperity state). */
+  goldenAgeDays: number;
+  /** Days remaining while city is in dark age (special decline state). */
+  darkAgeDays: number;
+  /** Days remaining while city is under epidemic (spread via trade routes). */
+  epidemicDays: number;
 };
 
 export type TileMap = Tile[][];
@@ -47,8 +61,36 @@ export type World = {
   cities: City[];
 };
 
+/**
+ * Severity (вес) of an event — used for display and filtering.
+ */
+export type EventSeverity = 'minor' | 'major' | 'cataclysmic';
+
+/**
+ * Predefined event kinds used for coloring / filtering the event log.
+ */
+export type EventKind =
+  | 'harvest'
+  | 'plague'
+  | 'golden_age'
+  | 'dark_age'
+  | 'drought'
+  | 'flood'
+  | 'conflict'
+  | 'alliance'
+  | 'colony'
+  | 'epidemic'
+  | 'caravan'
+  | 'fortune'
+  | 'misfortune';
+
 export type Event = {
-    id: string;
-    day: number;
-    message: string;
-}
+  id: string;
+  day: number;
+  message: string;
+  kind: EventKind;
+  /** Which cities are directly involved (for UI filtering / highlighting). */
+  affectedCityIds?: string[];
+  /** How impactful the event was (defaults to 'minor'). */
+  severity?: EventSeverity;
+};

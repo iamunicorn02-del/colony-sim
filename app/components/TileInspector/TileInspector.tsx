@@ -1,4 +1,4 @@
-import { CityTrait, Tile, City } from '@/app/types/tiles';
+import { CityTrait, Tile, City, Event } from '@/app/types/tiles';
 import type { TradeLink } from '@/app/lib/worldSocket';
 import styles from './TileInspector.module.css';
 
@@ -25,13 +25,34 @@ interface TileInspectorProps {
   selectedTile: Tile | null;
   selectedCity: City | null;
   tradeLinks: TradeLink[];
+  eventLog: Event[];
+  worldCities: City[];
 }
 
-export function TileInspector({ selectedTile, selectedCity, tradeLinks }: TileInspectorProps) {
+export function TileInspector({ selectedTile, selectedCity, tradeLinks, eventLog, worldCities }: TileInspectorProps) {
   const cityTrades = selectedCity
     ? tradeLinks.filter(
         (t) => t.sellerId === selectedCity.id || t.buyerId === selectedCity.id,
       )
+    : [];
+
+  // Last 5 events that affected this city.
+  const cityEvents = selectedCity
+    ? eventLog
+        .slice()
+        .reverse()
+        .filter((e) => e.affectedCityIds?.includes(selectedCity.id))
+        .slice(0, 5)
+    : [];
+
+  // Relationships with other cities (city id → city name mappings).
+  const relationshipEntries = selectedCity
+    ? Object.entries(selectedCity.relationships)
+        .map(([id, rel]) => {
+          const name = worldCities.find((c) => c.id === id)?.name ?? id;
+          return { id, name, rel };
+        })
+        .filter((r) => r.rel !== 'neutral')
     : [];
 
   return (
@@ -52,6 +73,21 @@ export function TileInspector({ selectedTile, selectedCity, tradeLinks }: TileIn
               {STATUS_LABELS[selectedCity.status.state] || selectedCity.status.state}
             </span>
           </span>
+
+          {/* Active state timers */}
+          {(selectedCity.goldenAgeDays > 0 || selectedCity.darkAgeDays > 0 || selectedCity.epidemicDays > 0) && (
+            <span className={styles.timersHeader}>Активные состояния:</span>
+          )}
+          {selectedCity.goldenAgeDays > 0 && (
+            <span className={styles.timerEntry_golden}>✨ Золотой век: {selectedCity.goldenAgeDays} дн.</span>
+          )}
+          {selectedCity.darkAgeDays > 0 && (
+            <span className={styles.timerEntry_dark}>💀 Тёмные времена: {selectedCity.darkAgeDays} дн.</span>
+          )}
+          {selectedCity.epidemicDays > 0 && (
+            <span className={styles.timerEntry_epidemic}>🦠 Эпидемия: {selectedCity.epidemicDays} дн.</span>
+          )}
+
           {selectedCity.traits.length > 0 && (
             <span className={styles.traitsHeader}>Черты:</span>
           )}
@@ -60,6 +96,17 @@ export function TileInspector({ selectedTile, selectedCity, tradeLinks }: TileIn
               {TRAIT_LABELS[trait] || trait}
             </span>
           ))}
+
+          {/* Relationships with other cities */}
+          {relationshipEntries.length > 0 && (
+            <span className={styles.relationsHeader}>Отношения:</span>
+          )}
+          {relationshipEntries.map(({ id, name, rel }) => (
+            <span key={id} className={styles.relationEntry}>
+              {rel === 'ally' ? '🤝' : '⚔️'} {name}
+            </span>
+          ))}
+
           {cityTrades.length > 0 && (
             <span className={styles.tradeHeader}>Торговые маршруты:</span>
           )}
@@ -68,6 +115,16 @@ export function TileInspector({ selectedTile, selectedCity, tradeLinks }: TileIn
               {t.sellerId === selectedCity.id
                 ? `→ продаёт ${t.food} еды за ${t.gold} золота`
                 : `← покупает ${t.food} еды за ${t.gold} золота`}
+            </span>
+          ))}
+
+          {/* City event history */}
+          {cityEvents.length > 0 && (
+            <span className={styles.historyHeader}>Последние события:</span>
+          )}
+          {cityEvents.map((e) => (
+            <span key={e.id} className={styles.historyEntry}>
+              Day {e.day}: {e.message}
             </span>
           ))}
         </>

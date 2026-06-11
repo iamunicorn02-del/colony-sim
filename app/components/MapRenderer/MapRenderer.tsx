@@ -16,6 +16,9 @@ import {
   CITY_MARKER_RADIUS_MIN,
   CITY_MARKER_RADIUS_MAX,
   CITY_MARKER_MAX_POP,
+  CITY_RELATIONSHIP_COLORS,
+  CITY_GOLDEN_AGE_GLOW,
+  CITY_DARK_AGE_GLOW,
 } from '@/app/config';
 
 interface MapRendererProps {
@@ -182,32 +185,65 @@ export function MapRenderer({ world, tileSize = 16, tradeLinks, setSelectedCityI
     for (const city of cities) {
       const centerX = (city.x + 0.5) * tileSize;
       const centerY = (city.y + 0.5) * tileSize;
-      // Radius scales with population.
       const t = Math.min(city.population / CITY_MARKER_MAX_POP, 1);
       const radius = CITY_MARKER_RADIUS_MIN + t * (CITY_MARKER_RADIUS_MAX - CITY_MARKER_RADIUS_MIN);
 
-      // Outer glow for golden-age / dark-age cities.
+      // --- Territory influence (semi-transparent circle) ---
+      const territoryRadius = (radius + 8) + t * 20;
+      context.beginPath();
+      context.arc(centerX, centerY, territoryRadius, 0, Math.PI * 2);
+      context.fillStyle = 'rgba(255,255,255,0.03)';
+      context.fill();
+      context.beginPath();
+      context.arc(centerX, centerY, territoryRadius, 0, Math.PI * 2);
+      context.strokeStyle = 'rgba(255,255,255,0.06)';
+      context.lineWidth = 1;
+      context.stroke();
+
       if (city.status.state === 'golden_age' || city.status.state === 'dark_age') {
+        const isGolden = city.status.state === 'golden_age';
         context.beginPath();
-        context.arc(centerX, centerY, radius + 4, 0, Math.PI * 2);
-        context.fillStyle = city.status.state === 'golden_age'
-          ? 'rgba(234,179,8,0.25)'
-          : 'rgba(107,114,128,0.2)';
+        context.arc(centerX, centerY, radius + 6, 0, Math.PI * 2);
+        context.fillStyle = isGolden ? CITY_GOLDEN_AGE_GLOW : CITY_DARK_AGE_GLOW;
         context.fill();
       }
+
+      // --- Relationship-based stroke color ---
+      let strokeColor = CITY_RELATIONSHIP_COLORS.neutral;
+      const rels = Object.values(city.relationships);
+      if (rels.some((r) => r === 'enemy')) strokeColor = CITY_RELATIONSHIP_COLORS.enemy;
+      else if (rels.some((r) => r === 'ally')) strokeColor = CITY_RELATIONSHIP_COLORS.ally;
 
       context.beginPath();
       context.arc(centerX, centerY, radius, 0, Math.PI * 2);
       context.fillStyle = city.status.color;
       context.fill();
-      context.lineWidth = 2;
-      context.strokeStyle = '#1b1302';
+      context.lineWidth = 3;
+      context.strokeStyle = strokeColor;
       context.stroke();
 
       context.beginPath();
       context.arc(centerX, centerY, Math.max(1, radius * 0.3), 0, Math.PI * 2);
       context.fillStyle = '#1b1302';
       context.fill();
+
+      // --- Timer badges for special states ---
+      let badgeText = '';
+      if (city.epidemicDays > 0) badgeText += `🦠${city.epidemicDays}`;
+      if (city.goldenAgeDays > 0) badgeText += `✨${city.goldenAgeDays}`;
+      if (city.darkAgeDays > 0) badgeText += `💀${city.darkAgeDays}`;
+      if (badgeText) {
+        const badgeX = centerX + radius + 5;
+        const badgeY = centerY - radius - 2;
+        context.font = '500 10px sans-serif';
+        context.textAlign = 'left';
+        context.textBaseline = 'bottom';
+        context.fillStyle = '#ffffff';
+        context.shadowColor = 'rgba(0,0,0,0.8)';
+        context.shadowBlur = 4;
+        context.fillText(badgeText, badgeX, badgeY);
+        context.shadowBlur = 0;
+      }
     }
 
     // City name labels drawn above their markers, with an outline so they stay
@@ -285,7 +321,7 @@ export function MapRenderer({ world, tileSize = 16, tradeLinks, setSelectedCityI
       const centerX = (city.x + 0.5) * tileSize;
       const centerY = (city.y + 0.5) * tileSize;
 
-      return Math.hypot(point.x - centerX, point.y - centerY) <= CITY_MARKER_RADIUS + 2;
+      return Math.hypot(point.x - centerX, point.y - centerY) <= CITY_MARKER_RADIUS_MAX + 2;
     }) ?? null;
   }, [cities, getMapPointFromPointer, tileSize]);
 

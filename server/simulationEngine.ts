@@ -1,4 +1,4 @@
-import { City, TileMap, TileType, World } from '../app/types/tiles';
+import { City, CityState, TileMap, TileType, World } from '../app/types/tiles';
 import {
   MAP_WIDTH,
   MAP_HEIGHT,
@@ -46,16 +46,23 @@ const computeFoodProduction = (city: City, map: TileMap): number => {
   return production;
 };
 
-/** Compute the city's status from its current food reserves. */
 export const computeCityStatus = (city: City): City['status'] => {
+  // Golden age / dark age are transient event states that override
+  // the food-based status while their timers are active.
+  if (city.goldenAgeDays > 0) {
+    return { state: 'golden_age', color: CITY_STATUS_COLORS.golden_age };
+  }
+  if (city.darkAgeDays > 0) {
+    return { state: 'dark_age', color: CITY_STATUS_COLORS.dark_age };
+  }
+
   const ratio = city.population > 0
     ? city.food / (city.population * FOOD_CONSUMPTION_PER_CAPITA)
     : 0;
-  let state: string;
+  let state: CityState;
   if (ratio < CITY_STATUS_THRESHOLDS.starving) state = 'starving';
   else if (ratio < CITY_STATUS_THRESHOLDS.struggling) state = 'struggling';
   else if (ratio < CITY_STATUS_THRESHOLDS.stable) state = 'stable';
-  else if (ratio < CITY_STATUS_THRESHOLDS.thriving) state = 'thriving';
   else state = 'thriving';
   return { state, color: CITY_STATUS_COLORS[state] || '#facc15' };
 };
@@ -69,8 +76,20 @@ const updateCityForNewDay = (city: City, map: TileMap): City => {
     (sum, t) => sum + (TRAIT_GOLD_BONUS[t] || 0), 0,
   );
 
+  // --- Special state multipliers ---
+  let stateFoodMult = 1;
+  let stateGoldMult = 1;
+  if (city.goldenAgeDays > 0) {
+    stateFoodMult += 0.2;
+    stateGoldMult += 0.15;
+  }
+  if (city.darkAgeDays > 0) {
+    stateFoodMult -= 0.15;
+    stateGoldMult -= 0.2;
+  }
+
   // --- Food ---
-  const production = computeFoodProduction(city, map) * (1 + foodBonus);
+  const production = computeFoodProduction(city, map) * (1 + foodBonus) * stateFoodMult;
   const consumption = city.population * FOOD_CONSUMPTION_PER_CAPITA;
   const netFood = production - consumption;
 
@@ -84,16 +103,31 @@ const updateCityForNewDay = (city: City, map: TileMap): City => {
   } else if (city.food <= 0) {
     population -= Math.ceil(city.population * POPULATION_STARVATION_RATE);
   }
+
+  // Epidemic: extra population loss
+  if (city.epidemicDays > 0) {
+    const loss = Math.ceil(city.population * 0.03);
+    population -= loss;
+  }
+
   population = Math.max(MIN_CITY_POPULATION, population);
 
   // --- Gold ---
-  const gold = city.gold + population * GOLD_TAX_PER_CAPITA * (1 + goldBonus);
+  const gold = city.gold + population * GOLD_TAX_PER_CAPITA * (1 + goldBonus) * stateGoldMult;
+
+  // --- Decrement temporary state timers ---
+  const goldenAgeDays = Math.max(0, city.goldenAgeDays - 1);
+  const darkAgeDays = Math.max(0, city.darkAgeDays - 1);
+  const epidemicDays = Math.max(0, city.epidemicDays - 1);
 
   const updated: City = {
     ...city,
     population,
     food: Math.round(food),
     gold: Math.round(gold),
+    goldenAgeDays,
+    darkAgeDays,
+    epidemicDays,
   };
   updated.status = computeCityStatus(updated);
   return updated;

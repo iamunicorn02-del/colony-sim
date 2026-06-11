@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Tile, World, Event } from '@/app/types/tiles';
 import { EventLog } from '../EventLog/EventLog';
 import { CityRanking } from '@/app/components/CityRanking/CityRanking';
+import { MiniMap } from '@/app/components/MiniMap/MiniMap';
 import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';
 
 const WORLD_ID_KEY = 'colony-sim:worldId';
@@ -18,6 +19,7 @@ export function WorldView() {
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const [tradeLinks, setTradeLinks] = useState<TradeLink[]>([]);
+  const [dailyStory, setDailyStory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,6 +76,7 @@ export function WorldView() {
               setWorld(msg.world as World);
               setDay(msg.day);
               setEventLog(msg.eventLog as Event[]);
+              setDailyStory(msg.dailyStory ?? null);
               setTradeLinks(msg.tradeLinks ?? []);
               setLoading(false);
               break;
@@ -133,9 +136,15 @@ export function WorldView() {
       <main className="h-full w-full">
         <MapRenderer world={world} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} />
         <DayCounter day={day} />
-        <TileInspector selectedTile={selectedTile} selectedCity={selectedCity} tradeLinks={tradeLinks} />
+        {dailyStory && (
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-sm bg-black/60 text-white border border-white/10 pointer-events-none animate-pulse">
+            <span className="text-amber-400 mr-2">📜</span>{dailyStory}
+          </div>
+        )}
+        <TileInspector selectedTile={selectedTile} selectedCity={selectedCity} tradeLinks={tradeLinks} eventLog={eventLog} worldCities={world?.cities ?? []} />
         <EventLog eventLog={eventLog} />
         <CityRanking cities={world.cities} />
+        <MiniMap world={world} selectedCityId={selectedCityId} onSelectCity={setSelectedCityId} />
       </main>
     </div>
   );
