@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { City, Tile, World } from '@/app/types/tiles';
+import type { TradeLink } from '@/app/lib/worldSocket';
 import styles from './MapRenderer.module.css';
 import {
   MIN_SCALE,
@@ -7,12 +8,18 @@ import {
   KEYBOARD_PAN_DISTANCE,
   DRAG_CLICK_THRESHOLD,
   CITY_MARKER_RADIUS,
+  CITY_LABEL_FONT,
+  CITY_LABEL_COLOR,
+  CITY_LABEL_OUTLINE_COLOR,
+  CITY_LABEL_OUTLINE_WIDTH,
+  CITY_LABEL_OFFSET_Y,
   TILE_COLORS,
 } from '@/app/config';
 
 interface MapRendererProps {
   world: World;
   tileSize?: number;
+  tradeLinks: TradeLink[];
   setSelectedTile: (tile: Tile | null) => void;
   setSelectedCityId: (cityId: string | null) => void;
 }
@@ -35,7 +42,7 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
   return { min: viewportSize - contentSize, max: 0 };
 };
 
-export function MapRenderer({ world, tileSize = 16, setSelectedCityId, setSelectedTile }: MapRendererProps) {
+export function MapRenderer({ world, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile }: MapRendererProps) {
   const { map, cities } = world;
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
@@ -145,6 +152,31 @@ export function MapRenderer({ world, tileSize = 16, setSelectedCityId, setSelect
       context.stroke();
     }
 
+    // Trade route lines (drawn below city markers).
+    if (tradeLinks.length > 0) {
+      const cityById = new Map(cities.map((c) => [c.id, c]));
+      context.lineWidth = 2;
+      context.setLineDash([4, 3]);
+      for (const link of tradeLinks) {
+        const seller = cityById.get(link.sellerId);
+        const buyer = cityById.get(link.buyerId);
+        if (!seller || !buyer) continue;
+        const sx = (seller.x + 0.5) * tileSize;
+        const sy = (seller.y + 0.5) * tileSize;
+        const bx = (buyer.x + 0.5) * tileSize;
+        const by = (buyer.y + 0.5) * tileSize;
+        const grad = context.createLinearGradient(sx, sy, bx, by);
+        grad.addColorStop(0, 'rgba(245,197,66,0.7)');
+        grad.addColorStop(1, 'rgba(90,200,255,0.7)');
+        context.strokeStyle = grad;
+        context.beginPath();
+        context.moveTo(sx, sy);
+        context.lineTo(bx, by);
+        context.stroke();
+      }
+      context.setLineDash([]);
+    }
+
     for (const city of cities) {
       const centerX = (city.x + 0.5) * tileSize;
       const centerY = (city.y + 0.5) * tileSize;
@@ -162,7 +194,25 @@ export function MapRenderer({ world, tileSize = 16, setSelectedCityId, setSelect
       context.fillStyle = '#1b1302';
       context.fill();
     }
-  }, [cities, map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
+
+    // City name labels drawn above their markers, with an outline so they stay
+    // readable over any terrain.
+    context.font = CITY_LABEL_FONT;
+    context.textAlign = 'center';
+    context.textBaseline = 'bottom';
+    context.lineWidth = CITY_LABEL_OUTLINE_WIDTH;
+    context.strokeStyle = CITY_LABEL_OUTLINE_COLOR;
+    context.lineJoin = 'round';
+
+    for (const city of cities) {
+      const centerX = (city.x + 0.5) * tileSize;
+      const labelY = (city.y + 0.5) * tileSize - CITY_MARKER_RADIUS - CITY_LABEL_OFFSET_Y;
+
+      context.strokeText(city.name, centerX, labelY);
+      context.fillStyle = CITY_LABEL_COLOR;
+      context.fillText(city.name, centerX, labelY);
+    }
+  }, [cities, tradeLinks, map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
 
   useEffect(() => {
     const viewport = containerRef.current;

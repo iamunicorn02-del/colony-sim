@@ -1,7 +1,14 @@
 import type { Event, World } from '../types/tiles';
 
+export type TradeLink = {
+  sellerId: string;
+  buyerId: string;
+  food: number;
+  gold: number;
+};
+
 export type ServerMessage =
-  | { type: 'worldState'; world: World; day: number; eventLog: Event[] }
+  | { type: 'worldState'; world: World; day: number; eventLog: Event[]; tradeLinks: TradeLink[] }
   | { type: 'event'; day: number; message: string }
   | { type: 'error'; message: string }
   | { type: 'pong' };

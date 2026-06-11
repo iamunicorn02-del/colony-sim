@@ -1,0 +1,122 @@
+.button {
+  position: absolute;
+  right: 165px;
+  bottom: 15px;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 6px;
+  background: rgba(20, 17, 10, 0.8);
+  color: #ffd740;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.button:hover {
+  background: rgba(40, 35, 15, 0.9);
+  border-color: rgba(255, 215, 0, 0.7);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+
+  z-index: 10;
+}
+
+.panel {
+  position: relative;
+
+  width: 500px;
+  max-width: 90%;
+
+  padding: 24px;
+  background: black;
+  border-radius: 12px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  max-height: 85vh;
+}
+
+.closeButton {
+  position: absolute;
+
+  top: 10px;
+  right: 10px;
+  border: none;
+  background: none;
+
+  font-size: 20px;
+  color: white;
+
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  color: #fff;
+}
+
+.title {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0 0 16px 0;
+}
+
+.list {
+  margin-top: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.list::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 4px;
+}
+
+.row {
+  display: flex;
+
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+  color: #eee;
+  align-items: center;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rank {
+  min-width: 40px;
+
+  font-weight: bold;
+  color: #ffd740;
+}
+
+.name {
+  flex: 1;
+  color: #e0e0e0;
+}
+
+.gold {
+  color: #ffd740;
+  font-weight: bold;
+  min-width: 80px;
+  text-align: right;
+}

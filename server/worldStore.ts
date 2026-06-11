@@ -1,7 +1,9 @@
 import WebSocket from 'ws';
 import { Event, World } from '../app/types/tiles';
-import { DAY_TICK_MS, EVENT_INTERVAL_DAYS, MAX_EVENT_LOG_SIZE } from '../app/config';
+import { DAY_TICK_MS, MAX_EVENT_LOG_SIZE, MAX_TRADE_EVENTS_PER_TICK } from '../app/config';
 import { updateWorldForNewDay } from './simulationEngine';
+import { maybeGenerateEvent } from './worldEvents';
+import { resolveTrades } from './trading';
 
 export type WorldEntry = {
   id: string;
@@ -70,16 +72,29 @@ function tickWorld(id: string) {
   entry.day += 1;
   entry.world = updateWorldForNewDay(entry.world);
 
-  if (entry.day % EVENT_INTERVAL_DAYS === 0) {
-    const event: Event = {
-      id: `evt-${Date.now()}`,
+  // Resolve trade between nearby cities.
+  const tradeResult = resolveTrades(entry.world.cities, entry.world.map);
+  entry.world = { ...entry.world, cities: tradeResult.cities };
+  for (let i = 0; i < Math.min(tradeResult.trades.length, MAX_TRADE_EVENTS_PER_TICK); i++) {
+    const t = tradeResult.trades[i];
+    const seller = entry.world.cities.find((c) => c.id === t.sellerId);
+    const buyer = entry.world.cities.find((c) => c.id === t.buyerId);
+    if (!seller || !buyer) continue;
+    entry.eventLog.push({
+      id: `trade-${entry.day}-${i}`,
       day: entry.day,
-      message: `Passed ${entry.day} days`,
-    };
-    entry.eventLog.push(event);
-    if (entry.eventLog.length > MAX_EVENT_LOG_SIZE) {
-      entry.eventLog.shift();
-    }
+      message: `Trade: ${seller.name} → ${buyer.name} (${t.food} food for ${t.gold} gold)`,
+    });
+  }
+
+  const result = maybeGenerateEvent(entry.world, entry.day);
+  if (result) {
+    entry.world = result.world;
+    entry.eventLog.push(result.event);
+  }
+
+  if (entry.eventLog.length > MAX_EVENT_LOG_SIZE) {
+    entry.eventLog = entry.eventLog.slice(-MAX_EVENT_LOG_SIZE);
   }
 
   broadcast(id, {
@@ -87,5 +102,6 @@ function tickWorld(id: string) {
     world: entry.world,
     day: entry.day,
     eventLog: entry.eventLog,
+    tradeLinks: tradeResult.trades,
   });
 }

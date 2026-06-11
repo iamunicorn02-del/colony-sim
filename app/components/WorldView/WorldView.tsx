@@ -6,7 +6,8 @@ import { DayCounter } from '../DayCounter/DayCounter';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Tile, City, World, Event } from '@/app/types/tiles';
 import { EventLog } from '../EventLog/EventLog';
-import { createWorldSocket } from '@/app/lib/worldSocket';
+import { CityRanking } from '@/app/components/CityRanking/CityRanking';
+import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';
 
 const WORLD_ID_KEY = 'colony-sim:worldId';
 
@@ -16,6 +17,7 @@ export function WorldView() {
   const [eventLog, setEventLog] = useState<Event[]>([]);
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
+  const [tradeLinks, setTradeLinks] = useState<TradeLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +74,7 @@ export function WorldView() {
               setWorld(msg.world as World);
               setDay(msg.day);
               setEventLog(msg.eventLog as Event[]);
+              setTradeLinks(msg.tradeLinks ?? []);
               setLoading(false);
               break;
             case 'event':
@@ -128,10 +131,11 @@ export function WorldView() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-black font-sans">
       <main className="h-full w-full">
-        <MapRenderer world={world} tileSize={16} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} />
+        <MapRenderer world={world} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} />
         <DayCounter day={day} />
-        <TileInspector selectedTile={selectedTile} selectedCity={selectedCity} />
+        <TileInspector selectedTile={selectedTile} selectedCity={selectedCity} tradeLinks={tradeLinks} />
         <EventLog eventLog={eventLog} />
+        <CityRanking cities={world.cities} />
       </main>
     </div>
   );
