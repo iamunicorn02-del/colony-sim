@@ -4,7 +4,7 @@ import { MapRenderer } from '@/app/components/MapRenderer/MapRenderer';
 import { TileInspector } from '@/app/components/TileInspector/TileInspector';
 import { DayCounter } from '../DayCounter/DayCounter';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Tile, World, Event, EventKind } from '@/app/types/tiles';
+import { Tile, World, Event, EventKind, Human } from '@/app/types/tiles';
 import { EventLog } from '../EventLog/EventLog';
 import { CityRanking } from '@/app/components/CityRanking/CityRanking';
 import { MiniMap } from '@/app/components/MiniMap/MiniMap';
@@ -14,6 +14,7 @@ const WORLD_ID_KEY = 'colony-sim:worldId';
 
 export function WorldView() {
   const [world, setWorld] = useState<World | null>(null);
+  const [humans, setHumans] = useState<Record<string, Human>>({});
   const [day, setDay] = useState(0);
   const [eventLog, setEventLog] = useState<Event[]>([]);
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
@@ -74,6 +75,7 @@ export function WorldView() {
           switch (msg.type) {
             case 'worldState':
               setWorld(msg.world as World);
+              setHumans((msg.world as World).humans);
               setDay(msg.day);
               setEventLog(msg.eventLog as Event[]);
               setDailyStory(msg.dailyStory ?? null);
