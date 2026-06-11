@@ -29,6 +29,7 @@ interface MapRendererProps {
   setSelectedTile: (tile: Tile | null) => void;
   setSelectedCityId: (cityId: string | null) => void;
   onHumanClick?: (humanId: string) => void;
+  cameraTarget?: { x: number; y: number } | null;
 }
 
 interface Camera {
@@ -53,7 +54,7 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
   return { min: viewportSize - contentSize, max: 0 };
 };
 
-export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile, onHumanClick }: MapRendererProps) {
+export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile, onHumanClick, cameraTarget }: MapRendererProps) {
   const { map, cities } = world;
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
@@ -105,6 +106,24 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
   useEffect(() => {
     centerView();
   }, [centerView, mapHeight, mapWidth, tileSize]);
+
+  // Camera follow: center on target when it changes
+  useEffect(() => {
+    if (!cameraTarget) return;
+    const viewport = containerRef.current;
+    if (!viewport) return;
+
+    const targetPixelX = (cameraTarget.x + 0.5) * tileSize;
+    const targetPixelY = (cameraTarget.y + 0.5) * tileSize;
+
+    setCamera((currentCamera) =>
+      constrainCamera({
+        ...currentCamera,
+        x: viewport.clientWidth / 2 - targetPixelX * currentCamera.scale,
+        y: viewport.clientHeight / 2 - targetPixelY * currentCamera.scale,
+      }),
+    );
+  }, [cameraTarget, constrainCamera, tileSize]);
 
   // useEffect(() => {
   //   const intervalId = window.setInterval(() => {

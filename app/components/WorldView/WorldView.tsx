@@ -25,9 +25,12 @@ export function WorldView() {
   const [dailyStory, setDailyStory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cameraTarget, setCameraTarget] = useState<{ x: number; y: number } | null>(null);
 
   const socketRef = useRef<ReturnType<typeof createWorldSocket> | null>(null);
   const worldIdRef = useRef<string | null>(null);
+  const selectedHumanIdRef = useRef<string | null>(null);
+  selectedHumanIdRef.current = selectedHumanId;
 
   const selectedCity = world?.cities.find((c) => c.id === selectedCityId) ?? null;
 
@@ -83,6 +86,11 @@ export function WorldView() {
               setDailyStory(msg.dailyStory ?? null);
               setTradeLinks(msg.tradeLinks ?? []);
               setLoading(false);
+              // Update camera target to follow selected human
+              if (selectedHumanIdRef.current && (msg.world as World).humans[selectedHumanIdRef.current]) {
+                const h = (msg.world as World).humans[selectedHumanIdRef.current];
+                setCameraTarget({ x: h.x, y: h.y });
+              }
               break;
             case 'event':
               setEventLog((prev) =>
@@ -138,7 +146,7 @@ export function WorldView() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-black font-sans">
       <main className="h-full w-full">
-        <MapRenderer world={world} humans={humans} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} onHumanClick={(humanId) => { setSelectedHumanId(humanId); setSelectedTile(null); setSelectedCityId(null); }} />
+        <MapRenderer world={world} humans={humans} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} onHumanClick={(humanId) => { setSelectedHumanId(humanId); setSelectedTile(null); setSelectedCityId(null); const h = humans[humanId]; if (h) setCameraTarget({ x: h.x, y: h.y }); }} cameraTarget={cameraTarget} />
         <DayCounter day={day} />
         {dailyStory && (
           <div className="absolute top-12 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-sm bg-black/60 text-white border border-white/10 pointer-events-none animate-pulse">
