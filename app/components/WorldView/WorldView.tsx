@@ -8,6 +8,7 @@ import { Tile, World, Event, EventKind, Human } from '@/app/types/tiles';
 import { EventLog } from '../EventLog/EventLog';
 import { CityRanking } from '@/app/components/CityRanking/CityRanking';
 import { MiniMap } from '@/app/components/MiniMap/MiniMap';
+import HumanCard from '@/app/components/HumanCard/HumanCard';
 import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';
 
 const WORLD_ID_KEY = 'colony-sim:worldId';
@@ -145,6 +146,9 @@ export function WorldView() {
           </div>
         )}
         <TileInspector selectedTile={selectedTile} selectedCity={selectedCity} tradeLinks={tradeLinks} eventLog={eventLog} worldCities={world?.cities ?? []} />
+        {selectedHumanId && humans[selectedHumanId] && (
+          <HumanCard human={humans[selectedHumanId]} onClose={() => setSelectedHumanId(null)} />
+        )}
         <EventLog eventLog={eventLog} />
         <CityRanking cities={world.cities} />
         <MiniMap world={world} selectedCityId={selectedCityId} onSelectCity={setSelectedCityId} />
