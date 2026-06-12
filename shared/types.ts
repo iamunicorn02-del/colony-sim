@@ -10,6 +10,8 @@ export type Human = {
   y: number;
   hunger: number;   // 0-100
   energy: number;   // 0-100
+  health: number;   // 0-100
+  mood: number;     // 0-100
   currentAction: HumanAction;
 };
 

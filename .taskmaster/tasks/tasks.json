@@ -2,452 +2,214 @@
   "master": {
     "tasks": [
       {
-        "id": "1",
-        "title": "Define Human Entity Interface",
-        "description": "Create the core TypeScript interface for a Human entity with all required properties for the first stage.",
-        "details": "Create a new file `shared/types.ts` (or similar) to define the `Human` interface. This interface must include: `id: string`, `name: string`, `cityId: string`, `x: number`, `y: number`, `hunger: number` (0-100), `energy: number` (0-100), `currentAction: string` (e.g., 'idle', 'moving', 'eating', 'resting'). Also define a `HumanState` type if needed for WebSocket payloads. Ensure this type is shared between server and client.",
-        "testStrategy": "Verify the interface compiles correctly in TypeScript. Manually check that all required fields are present and correctly typed.",
+        "id": 1,
+        "complexity": 1,
+        "title": "Extend Human Type with Health and Mood",
+        "description": "Add health and mood fields to the Human interface in shared/types.ts to support the new needs system mechanics.",
+        "details": "Update the Human type in shared/types.ts to include two new fields: health (number, 0-100) and mood (number, 0-100). Ensure the type is properly exported and compatible with existing code.",
+        "testStrategy": "Verify TypeScript compilation succeeds and that objects of type Human can be created with health and mood fields.",
         "priority": "high",
-        "complexity": 2,
         "dependencies": [],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-11T20:02:27.647Z"
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": "2",
-        "title": "Update City Interface to Reference Humans",
-        "description": "Modify the existing City interface to include a list of human IDs instead of just a population count.",
-        "details": "In `shared/types.ts`, update the `City` interface. Remove the `population: number` field. Add a new field `humanIds: string[]` which will store the IDs of humans residing in this city. Ensure backward compatibility is not required as this is a foundational change.",
-        "testStrategy": "Confirm the updated City interface compiles and that existing code referencing `population` is flagged for update (expected).",
+        "id": 2,
+        "complexity": 1,
+        "title": "Update Human Generator with Initial Health and Mood",
+        "description": "Modify humanGenerator.ts to initialize new humans with appropriate health and mood values.",
+        "details": "In server/humanGenerator.ts, add health: randInt(70, 100) and mood: randInt(60, 100) to the human generation logic.",
+        "testStrategy": "Generate multiple humans and verify health is 70-100 and mood is 60-100.",
         "priority": "high",
-        "complexity": 2,
-        "dependencies": [
-          "1"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-11T20:45:13.572Z"
+        "dependencies": [1],
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": "3",
-        "title": "Update World Interface to Include Humans",
-        "description": "Extend the main World interface to include a collection of Human entities.",
-        "details": "In `shared/types.ts`, update the `World` interface to include a `humans: Record<string, Human>` field. This allows O(1) lookup of any human by their ID. Ensure the existing `cities: Record<string, City>` field remains.",
-        "testStrategy": "Verify the World interface includes both cities and humans, and compiles without errors.",
-        "priority": "high",
-        "complexity": 2,
-        "dependencies": [
-          "1",
-          "2"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-11T20:45:21.056Z"
-      },
-      {
-        "id": "4",
-        "title": "Create Human Generator Utility",
-        "description": "Implement a utility function to generate initial Human entities for existing cities.",
-        "details": "Create a new file `server/humanGenerator.ts`. Implement a function `generateHumansForCity(city: City, count: number): Human[]` that creates `count` Human objects. Each human should have: a unique ID (e.g., using `uuid` or a simple counter), a randomly generated name (use a simple array of first/last names), the `cityId` set to the city's ID, initial `x` and `y` coordinates set to the city's location (or nearby), `hunger` and `energy` initialized to random values between 70-100, and `currentAction` set to 'idle'.",
-        "testStrategy": "Write a small test script or manually invoke the function to ensure it returns the correct number of humans with valid properties and unique IDs.",
-        "priority": "high",
-        "complexity": 3,
-        "dependencies": [
-          "1"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-11T20:47:39.522Z"
-      },
-      {
-        "id": "5",
-        "title": "Integrate Human Generation into World Initialization",
-        "description": "Modify the world initialization logic to populate cities with Human entities during world creation.",
-        "details": "In `server/worldStore.ts` (or wherever the initial world is created), after cities are generated, loop through each city and call `generateHumansForCity` with a reasonable starting population (e.g., 5-10 humans per city). Add the generated humans to the `world.humans` object and update each city's `humanIds` array with the new human IDs. Remove any logic that sets `city.population`.",
-        "testStrategy": "Start the server and inspect the initial world state (e.g., via console log or WebSocket message) to confirm humans are created and linked to cities.",
-        "priority": "high",
+        "id": 3,
         "complexity": 4,
-        "dependencies": [
-          "3",
-          "4"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-11T21:41:16.072Z"
-      },
-      {
-        "id": "6",
-        "title": "Update Simulation Engine to Process Humans Daily",
-        "description": "Modify the simulation engine to update each Human's state every game day.",
-        "details": "In `server/simulationEngine.ts`, within the main simulation tick (daily update), iterate over all humans in `world.humans`. For each human, implement basic daily updates: decrease `hunger` by 5-10 points, decrease `energy` by 3-7 points. Clamp values between 0 and 100. If `hunger` drops below 20, set `currentAction` to 'eating'. If `energy` drops below 20, set `currentAction` to 'resting'. Otherwise, set `currentAction` to 'idle' or 'moving' based on movement logic (see next task).",
-        "testStrategy": "Run the simulation for several ticks and log human states to verify hunger/energy decrease and action changes occur correctly.",
+        "title": "Implement Eating Mechanics with Food Consumption",
+        "description": "Update simulationEngine.ts so that 'eating' action actually consumes city food and restores hunger.",
+        "details": "In the human update loop: when currentAction === 'eating', find the human's city, if city.food >= 1 then city.food -= 1 and human.hunger += random(50, 70), clamp to 100. Update eating threshold from hunger < 20 to hunger < 25.",
+        "testStrategy": "Human with eating action + food: hunger increases, food decreases. No food: hunger stays same.",
         "priority": "high",
-        "complexity": 5,
-        "dependencies": [
-          "5"
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add human iteration loop to simulation tick",
-            "description": "In server/simulationEngine.ts, add a loop within the main simulation tick that iterates over all humans in world.humans.",
-            "dependencies": [],
-            "details": "Locate the main simulation tick function in server/simulationEngine.ts. Add a for...in loop or Object.values() iteration over world.humans to process each human entity daily.",
-            "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement hunger and energy decrease logic",
-            "description": "For each human, decrease hunger by 5-10 points and energy by 3-7 points using random values within those ranges.",
-            "dependencies": [
-              1
-            ],
-            "details": "Inside the human iteration loop, generate random decreases: hunger -= Math.floor(Math.random() * 6) + 5; energy -= Math.floor(Math.random() * 5) + 3;",
-            "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add value clamping between 0 and 100",
-            "description": "Ensure hunger and energy values stay within valid range by clamping them between 0 and 100 after decreases.",
-            "dependencies": [
-              2
-            ],
-            "details": "After decreasing values, apply clamping: human.hunger = Math.max(0, Math.min(100, human.hunger)); human.energy = Math.max(0, Math.min(100, human.energy));",
-            "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement action setting based on thresholds",
-            "description": "Set currentAction to 'eating' if hunger < 20, 'resting' if energy < 20, otherwise 'idle'.",
-            "dependencies": [
-              3
-            ],
-            "details": "Add conditional logic after clamping: if (human.hunger < 20) human.currentAction = 'eating'; else if (human.energy < 20) human.currentAction = 'resting'; else human.currentAction = 'idle';",
-            "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add logging for human state changes",
-            "description": "Add console logging to track human state changes during simulation ticks for debugging purposes.",
-            "dependencies": [
-              4
-            ],
-            "details": "Add console.log statements to output human ID, hunger, energy, and currentAction after updates to verify the simulation is working correctly.",
-            "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Test simulation with multiple ticks",
-            "description": "Run the simulation for several ticks and verify that hunger/energy decrease and action changes occur correctly.",
-            "dependencies": [
-              5
-            ],
-            "details": "Execute the simulation for 5-10 ticks and check console logs to ensure humans' hunger and energy are decreasing properly and actions are being set according to thresholds.",
-            "status": "pending",
-            "testStrategy": "Run simulation for multiple ticks and verify logged human states show correct hunger/energy decreases and appropriate action changes.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2026-06-11T21:43:47.439Z"
+        "dependencies": [1],
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": "7",
-        "title": "Implement Basic Random Movement for Humans",
-        "description": "Add logic to allow humans to randomly move on the map each day.",
-        "details": "In `server/simulationEngine.ts`, within the human update loop, add a movement step. If the human's action is not 'eating' or 'resting', there is a 30% chance the human will move. When moving, randomly adjust `x` and `y` by -1, 0, or +1, clamping to map boundaries (0-99 for 100x100 map). Set `currentAction` to 'moving' when movement occurs. Ensure movement is deterministic given a seed if needed, but simple Math.random() is acceptable for now.",
-        "testStrategy": "Observe human coordinates over multiple ticks to confirm they change randomly and stay within bounds.",
-        "priority": "medium",
-        "complexity": 4,
-        "dependencies": [
-          "6"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-11T21:59:59.927Z"
-      },
-      {
-        "id": "8",
-        "title": "Update WebSocket World State Payload",
-        "description": "Modify the WebSocket message to include the full human state alongside the world state.",
-        "details": "In `server/socketHandler.ts`, when sending the world state to clients (e.g., on connection or on simulation tick), ensure the payload includes the `humans` object from the world. The message should be a JSON object like `{ type: 'worldState', data: { cities: {...}, humans: {...} } }`. Remove any population-only data from cities in the payload.",
-        "testStrategy": "Connect a WebSocket client (e.g., browser console) and verify the received world state contains human data with correct structure.",
-        "priority": "high",
+        "id": 4,
         "complexity": 3,
-        "dependencies": [
-          "3",
-          "5"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-11T21:49:22.730Z"
-      },
-      {
-        "id": "9",
-        "title": "Update Client to Receive and Store Humans",
-        "description": "Modify the client-side state management to accept and store the humans data from WebSocket.",
-        "details": "In the client code (likely in a context or state manager, e.g., `client/worldState.ts` or within `WorldView.tsx`), update the state to include a `humans: Record<string, Human>` field. When a `worldState` message is received from WebSocket, parse and store the `humans` data alongside `cities`. Ensure the Human type is imported from the shared types.",
-        "testStrategy": "Log the client-side state after receiving a world state message to confirm humans are stored correctly.",
+        "title": "Implement Resting Mechanics with Energy Recovery",
+        "description": "Update simulationEngine.ts so that 'resting' action restores energy and prevents movement.",
+        "details": "When currentAction === 'resting': human.energy += random(15, 25), clamp to 100. Ensure movement chance is skipped for resting humans.",
+        "testStrategy": "Resting human recovers energy and does not change position.",
         "priority": "high",
-        "complexity": 3,
-        "dependencies": [
-          "8"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-11T21:52:57.790Z"
+        "dependencies": [1],
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": "10",
-        "title": "Render Humans on the Map",
-        "description": "Update the map renderer to display Human entities as visual elements on the map.",
-        "details": "In `MapRenderer.tsx`, after rendering cities, iterate over the `humans` object. For each human, render a small colored dot (e.g., blue circle) at their `(x, y)` tile position. Use a distinct visual style from cities. Ensure the rendering is efficient (e.g., avoid re-rendering all humans unnecessarily, though optimization is not a priority yet).",
-        "testStrategy": "Load the game and visually confirm that humans appear as dots on the map at their correct positions.",
-        "priority": "high",
-        "complexity": 5,
-        "dependencies": [
-          "9"
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add human rendering logic to MapRenderer.tsx",
-            "description": "In MapRenderer.tsx, after the city rendering loop, add a new loop that iterates over the humans object and renders each human as a small blue circle at their (x, y) tile coordinates.",
-            "dependencies": [],
-            "details": "After the existing city rendering code, add a forEach or Object.values(humans).map() loop. For each human, use ctx.beginPath(), ctx.arc(x, y, radius, 0, 2 * Math.PI), ctx.fillStyle = 'blue', ctx.fill(). Use tile size to convert (x, y) to pixel coordinates.",
-            "status": "pending",
-            "testStrategy": "Load the game and visually confirm that blue dots appear on the map at human positions.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Define human dot styling constants",
-            "description": "Define styling constants for human dots (color, radius, stroke) to ensure visual distinction from cities.",
-            "dependencies": [],
-            "details": "Add constants like HUMAN_DOT_RADIUS = 4, HUMAN_DOT_COLOR = '#3b82f6', HUMAN_DOT_STROKE = '#1e40af' at the top of MapRenderer.tsx. Apply these in the rendering loop for consistent styling.",
-            "status": "pending",
-            "testStrategy": "Verify that human dots have a distinct blue color and are smaller than city markers.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Prepare click detection data structure",
-            "description": "Create a data structure to map pixel positions to human IDs for click detection.",
-            "dependencies": [],
-            "details": "Create an array or Map called humanClickTargets that stores { id, x, y, radius } for each human. Populate this during the human rendering loop. This will be used in the click handler to determine which human was clicked.",
-            "status": "pending",
-            "testStrategy": "Log the humanClickTargets array to console and verify it contains correct positions and IDs.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement onClick handler for human detection",
-            "description": "Add an onClick handler to the canvas that checks if a click intersects with any human dot.",
-            "dependencies": [],
-            "details": "Add an onClick event to the canvas element. In the handler, calculate the click position relative to the canvas. Loop through humanClickTargets and check if the click is within radius + 5 pixels of any human. If found, call onHumanClick(humanId).",
-            "status": "pending",
-            "testStrategy": "Click on a human dot and verify the onHumanClick callback is invoked with the correct human ID.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add onHumanClick prop to MapRenderer",
-            "description": "Add an onHumanClick callback prop to MapRenderer component signature and wire it to the click handler.",
-            "dependencies": [
-              4
-            ],
-            "details": "Update the MapRendererProps interface to include onHumanClick?: (humanId: string) => void. Pass this prop to the click detection logic. Ensure the component gracefully handles when the prop is not provided.",
-            "status": "pending",
-            "testStrategy": "Pass a mock onHumanClick function and verify it is called when clicking a human dot.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2026-06-11T21:57:45.550Z"
-      },
-      {
-        "id": "11",
-        "title": "Enable Click Detection on Humans",
-        "description": "Implement click event handling on the map to detect when a player clicks on a Human.",
-        "details": "In `MapRenderer.tsx`, add an onClick handler to the human dot elements. When a human is clicked, trigger a callback (e.g., `onHumanClick(humanId: string)`) that is passed down from the parent component. Ensure the click target area is reasonable (e.g., 10x10 pixels around the dot).",
-        "testStrategy": "Click on a human dot and verify the callback is invoked with the correct human ID.",
-        "priority": "medium",
-        "complexity": 4,
-        "dependencies": [
-          "10"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-11T22:04:19.581Z"
-      },
-      {
-        "id": "12",
-        "title": "Create Human Card Component",
-        "description": "Build a UI component to display detailed information about a selected Human.",
-        "details": "Create a new component `HumanCard.tsx`. This component should accept a `Human` object as a prop and display: name, current action, hunger level (as a progress bar or number), energy level (as a progress bar or number), and coordinates (x, y). Style it as a card or panel that can be overlaid on the map.",
-        "testStrategy": "Render the HumanCard with sample data and verify all fields are displayed correctly.",
-        "priority": "medium",
-        "complexity": 3,
-        "dependencies": [
-          "1"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-12T06:37:29.553Z"
-      },
-      {
-        "id": "13",
-        "title": "Integrate Human Card into World View",
-        "description": "Connect the HumanCard to the main view so it appears when a human is selected.",
-        "details": "In `WorldView.tsx`, manage a `selectedHumanId` state. Pass the `onHumanClick` callback from Task 11 to `MapRenderer`. When a human is clicked, set `selectedHumanId`. Conditionally render the `HumanCard` component when `selectedHumanId` is not null, passing the corresponding human object from the state.",
-        "testStrategy": "Click on a human and verify the HumanCard appears with the correct data. Click elsewhere and verify it disappears.",
-        "priority": "medium",
-        "complexity": 4,
-        "dependencies": [
-          "11",
-          "12"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-12T06:41:23.523Z"
-      },
-      {
-        "id": "14",
-        "title": "Implement Camera Follow for Selected Human",
-        "description": "Add functionality to center the map camera on a selected human and follow them as they move.",
-        "details": "In `WorldView.tsx` or `MapRenderer.tsx`, implement a camera system. When a human is selected, calculate the camera offset so the human is centered on the screen. On each world state update, if a human is selected, recalculate the camera position to keep them centered. Allow the player to pan the camera manually, but re-center when a new human is selected. Store camera state (offsetX, offsetY) in the component or context.",
-        "testStrategy": "Select a human and verify the map centers on them. Move the camera manually, then select another human and verify it re-centers.",
-        "priority": "medium",
+        "id": 5,
         "complexity": 6,
-        "dependencies": [
-          "13"
-        ],
-        "status": "done",
+        "title": "Implement Health System with Death Mechanics",
+        "description": "Create health update logic that depends on hunger/energy and handles death when health reaches 0.",
+        "details": "In server/simulationEngine.ts, after updating hunger and energy: health update rules based on hunger/energy, death handling when health <= 0, death chance when health < 3 AND mood < 5.",
+        "testStrategy": "Health decreases when hunger/energy = 0, increases when both > 50. Human removed at health = 0.",
+        "priority": "high",
+        "dependencies": [3, 4],
+        "status": "pending",
         "subtasks": [
           {
             "id": 1,
-            "title": "Add camera state to WorldView component",
-            "description": "Introduce camera offset state (offsetX, offsetY) in WorldView.tsx or MapRenderer.tsx to track the current camera position.",
+            "title": "Implement health update rules based on hunger and energy",
+            "description": "Add logic to update human health: hunger=0 → health-=5-10, energy=0 → health-=3-7, both>50 → health+=2-5, clamp 0-100.",
             "dependencies": [],
-            "details": "Add useState for cameraOffset: { x: number, y: number } initialized to { x: 0, y: 0 }. This will be used to translate the map rendering so the selected human stays centered.",
+            "details": "In server/simulationEngine.ts, after updating hunger and energy: if hunger === 0: health -= random(5, 10); if energy === 0: health -= random(3, 7); if hunger > 50 && energy > 50: health += random(2, 5); clamp health to 0-100.",
             "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
+            "testStrategy": "Health decreases when hunger/energy=0, increases when both>50, clamped at 0-100."
           },
           {
             "id": 2,
-            "title": "Implement camera centering calculation on human selection",
-            "description": "When a human is selected, compute the camera offset needed to center them on the screen.",
-            "dependencies": [
-              1
-            ],
-            "details": "Create a function centerCameraOnHuman(human, canvasWidth, canvasHeight) that calculates offsetX = human.x - canvasWidth/2 and offsetY = human.y - canvasHeight/2. Call this function whenever a human is selected (from the onHumanClick callback).",
+            "title": "Implement death handling when health reaches 0",
+            "description": "Remove human from world.humans and city.humanIds, log death event.",
+            "dependencies": [1],
+            "details": "If health <= 0: remove from world.humans, remove humanId from city.humanIds, add eventLog entry: '{name} умер от истощения'.",
             "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
+            "testStrategy": "Human at health=0 is removed from all data structures. Death event is logged."
           },
           {
             "id": 3,
-            "title": "Apply camera offset to map rendering",
-            "description": "Modify the map rendering logic to apply the camera offset when drawing humans, cities, and other elements.",
-            "dependencies": [
-              1
-            ],
-            "details": "In the canvas drawing logic, subtract cameraOffset.x from all x-coordinates and cameraOffset.y from all y-coordinates before rendering. This shifts the viewport so the camera follows the offset.",
+            "title": "Implement death chance mechanic for critically low stats",
+            "description": "30% death chance when health < 3 AND mood < 5.",
+            "dependencies": [1],
+            "details": "After health update: if health < 3 AND mood < 5, apply 30% death chance (DEATH_CHANCE = 0.3). Same removal logic as health <= 0.",
             "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
+            "testStrategy": "Human with health<3 and mood<5 has 30% death chance. No death chance otherwise."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "complexity": 3,
+        "title": "Implement Mood System",
+        "description": "Create mood update logic based on overall wellbeing of the human.",
+        "details": "In server/simulationEngine.ts, after health update: mood += 5-10 if all stats > 70, mood -= 5-10 if any stat < 30, clamp 0-100.",
+        "testStrategy": "Mood increases when all stats > 70, decreases when any < 30, clamped at 0-100.",
+        "priority": "medium",
+        "dependencies": [5],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement mood update rules based on hunger, energy, and health",
+            "description": "All stats > 70 → mood += 5-10. Any stat < 30 → mood -= 5-10. Clamp 0-100.",
+            "dependencies": [],
+            "details": "In server/simulationEngine.ts, after health update: if hunger > 70 && energy > 70 && health > 70: mood += random(5, 10); if hunger < 30 || energy < 30 || health < 30: mood -= random(5, 10); clamp mood to 0-100.",
+            "status": "pending",
+            "testStrategy": "Mood goes up when all > 70, down when any < 30, stays neutral otherwise."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "complexity": 7,
+        "title": "Implement Population Dynamics",
+        "description": "Add birth mechanics and city destruction based on average morale and food availability.",
+        "details": "In updateCityForNewDay: calculate average mood, birth if mood>70 and food>pop*2 with 2% chance, city becomes ruins when last human dies.",
+        "testStrategy": "High mood + food → birth chance. Last human dies → ruins.",
+        "priority": "medium",
+        "dependencies": [5, 6],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Calculate average mood of city residents",
+            "description": "Iterate city.humanIds, fetch each human from world.humans, compute average mood.",
+            "dependencies": [],
+            "details": "In updateCityForNewDay: sum mood values of all residents via city.humanIds, divide by count. Handle empty city (return 0).",
+            "status": "pending",
+            "testStrategy": "Correct average for multiple humans, single human, empty city."
+          },
+          {
+            "id": 2,
+            "title": "Implement birth condition checks and probability",
+            "description": "If average mood > 70 AND city.food > population * 2, apply 2% birth chance.",
+            "dependencies": [1],
+            "details": "Check averageMood > 70 AND city.food > (city.humanIds.length * 2). If true, Math.random() < POPULATION_GROWTH_RATE triggers birth.",
+            "status": "pending",
+            "testStrategy": "Conditions pass with high mood+food, fail otherwise. 2% probability works."
+          },
+          {
+            "id": 3,
+            "title": "Generate new human and log birth event",
+            "description": "Call generateHumansForCity on successful birth, add to world.humans and city.humanIds, log event.",
+            "dependencies": [2],
+            "details": "On successful birth: generate human via generateHumansForCity, add to world.humans[human.id] and city.humanIds.push(human.id). Log: 'Новый житель родился в {city.name}'.",
+            "status": "pending",
+            "testStrategy": "New human appears in world.humans and city.humanIds. Birth event logged."
           },
           {
             "id": 4,
-            "title": "Update camera position on world tick when human is selected",
-            "description": "On each world state update, if a human is selected, recalculate the camera offset to keep them centered.",
-            "dependencies": [
-              2,
-              3
-            ],
-            "details": "In the useEffect or update handler that processes new world state, check if a selectedHumanId exists. If so, find the human in the new state and call centerCameraOnHuman again to update the offset.",
+            "title": "Implement city destruction when last human dies",
+            "description": "When city.humanIds becomes empty after a death, mark city as ruins and log destruction event.",
+            "dependencies": [],
+            "details": "In death handling (Task 5 logic): after removing human from city.humanIds, if length === 0, set city status to 'ruins' and log '{city.name} превратился в руины'.",
             "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
+            "testStrategy": "City with 1 human dying becomes ruins. City with >1 human stays active."
           },
           {
             "id": 5,
-            "title": "Implement manual camera pan controls",
-            "description": "Allow the player to pan the camera by dragging or using arrow keys, updating the camera offset independently.",
-            "dependencies": [
-              1
-            ],
-            "details": "Add mouse drag or keyboard event handlers that modify cameraOffset.x and cameraOffset.y. For drag: track mouse down, move, and up events to calculate delta. For keyboard: listen for arrow keys and adjust offset by a fixed step (e.g., 20px).",
+            "title": "Integrate population dynamics into updateCityForNewDay",
+            "description": "Combine mood calculation, birth, and city destruction into the city update function in correct order.",
+            "dependencies": [3, 4],
+            "details": "In updateCityForNewDay: after food/gold updates, calculate average mood → check birth conditions → attempt birth → log events → check for city destruction.",
             "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Re-center camera when a new human is selected",
-            "description": "When the player selects a different human, override any manual pan and re-center the camera on the new selection.",
-            "dependencies": [
-              2,
-              5
-            ],
-            "details": "Ensure the onHumanClick handler always calls centerCameraOnHuman regardless of current manual pan state. This resets the offset to center on the newly selected human.",
-            "status": "pending",
-            "testStrategy": null,
-            "parentId": "undefined"
-          },
-          {
-            "id": 7,
-            "title": "Test camera follow and pan integration",
-            "description": "Verify that selecting a human centers the camera, the camera follows them on updates, manual pan works, and selecting a new human re-centers.",
-            "dependencies": [
-              4,
-              6
-            ],
-            "details": "Select a human and verify the map centers on them. Manually pan the camera away. Select a different human and verify the camera snaps to center on the new selection. Confirm the followed human stays centered as they move.",
-            "status": "pending",
-            "testStrategy": "Select a human and verify the map centers on them. Move the camera manually, then select another human and verify it re-centers.",
-            "parentId": "undefined"
+            "testStrategy": "Full simulation: births happen in thriving cities, ruins form when last human dies."
           }
-        ],
-        "updatedAt": "2026-06-12T06:45:34.661Z"
+        ]
       },
       {
-        "id": "15",
-        "title": "Update Event Log to Show Human Actions",
-        "description": "Enhance the EventLog component to display relevant human activities.",
-        "details": "In `EventLog.tsx`, subscribe to simulation events or world state changes. When a human's action changes (e.g., from 'idle' to 'eating'), log a message like 'John Doe is eating'. Keep the log simple and limit the number of entries (e.g., last 50 events). Ensure events are timestamped or ordered.",
-        "testStrategy": "Run the simulation and verify that human action changes appear in the event log.",
+        "id": 8,
+        "complexity": 4,
+        "title": "Add Health and Mood Progress Bars to Inspector UI",
+        "description": "Extend Inspector component to display health and mood progress bars with appropriate colors.",
+        "details": "In Inspector.tsx and Inspector.module.css: add health bar (red→green, label 'Здоровье') and mood bar (gray→gold, label 'Настроение'). All 4 bars: hunger, energy, health, mood.",
+        "testStrategy": "4 bars displayed with correct colors and Russian labels.",
+        "priority": "medium",
+        "dependencies": [1],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "complexity": 2,
+        "title": "Update Human Dot Colors Based on Health",
+        "description": "Modify MapRenderer to color human dots based on their health status.",
+        "details": "Replace HUMAN_DOT_COLOR with getHumanDotColor(health): >60 → blue #3b82f6, 30-60 → yellow #eab308, <30 → red #ef4444.",
+        "testStrategy": "Dot colors match health: blue (>60), yellow (30-60), red (<30).",
+        "priority": "medium",
+        "dependencies": [1],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "complexity": 2,
+        "title": "Verify WebSocket Protocol for Health and Mood Data",
+        "description": "Ensure server sends complete human data including health and mood to clients via WebSocket.",
+        "details": "Verify worldState payload includes humans with all fields. Check ServerMessage type in worldSocket.ts. Ensure no data is filtered out.",
+        "testStrategy": "Client receives health and mood via WebSocket. Values update in real-time.",
         "priority": "low",
-        "complexity": 3,
-        "dependencies": [
-          "6",
-          "9"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2026-06-12T06:50:29.792Z"
+        "dependencies": [1, 8, 9],
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
-      "version": "1.0.0",
-      "lastModified": "2026-06-12T06:50:29.792Z",
-      "taskCount": 15,
-      "completedCount": 15,
-      "tags": [
-        "master"
-      ]
+      "created": "2026-06-12T09:05:33.157Z",
+      "updated": "2026-06-12T09:15:00.000Z",
+      "description": "Tasks for master context"
     }
   }
 }

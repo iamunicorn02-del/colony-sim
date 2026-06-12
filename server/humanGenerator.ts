@@ -40,6 +40,8 @@ export function generateHumansForCity(city: City, count: number): Human[] {
       y: clamp(city.y + offsetY, MAP_MIN, MAP_MAX),
       hunger: randInt(70, 100),
       energy: randInt(70, 100),
+      health: randInt(70, 100),
+      mood: randInt(70, 100),
       currentAction: 'idle',
     });
   }
