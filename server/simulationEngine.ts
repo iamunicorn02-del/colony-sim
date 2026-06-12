@@ -140,6 +140,11 @@ export const updateWorldForNewDay = (world: World): World => {
       }
     }
 
+    // Resting: recover energy
+    if (human.currentAction === 'resting') {
+      h.energy = Math.min(100, h.energy + randInt(15, 25));
+    }
+
     if (h.hunger < 25) h.currentAction = 'eating';
     else if (h.energy < 20) h.currentAction = 'resting';
     else h.currentAction = 'idle';
