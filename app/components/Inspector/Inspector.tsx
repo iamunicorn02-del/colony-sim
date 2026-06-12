@@ -128,6 +128,8 @@ function HumanSection({ human }: { human: Human }) {
   const actionClass = styles[`action_${human.currentAction}`] ?? styles.action_idle;
   const hunger = Math.min(100, Math.max(0, human.hunger));
   const energy = Math.min(100, Math.max(0, human.energy));
+  const health = Math.min(100, Math.max(0, human.health));
+  const mood = Math.min(100, Math.max(0, human.mood));
 
   return (
     <div className={styles.section}>
@@ -157,6 +159,26 @@ function HumanSection({ human }: { human: Human }) {
         </div>
         <div className={styles.barTrack}>
           <div className={`${styles.barFill} ${styles.energyFill}`} style={{ width: `${energy}%` }} />
+        </div>
+      </div>
+
+      <div>
+        <div className={styles.row}>
+          <span className={styles.label}>Здоровье</span>
+          <span className={styles.value}>{health}%</span>
+        </div>
+        <div className={styles.barTrack}>
+          <div className={`${styles.barFill} ${styles.healthFill}`} style={{ width: `${health}%` }} />
+        </div>
+      </div>
+
+      <div>
+        <div className={styles.row}>
+          <span className={styles.label}>Настроение</span>
+          <span className={styles.value}>{mood}%</span>
+        </div>
+        <div className={styles.barTrack}>
+          <div className={`${styles.barFill} ${styles.moodFill}`} style={{ width: `${mood}%` }} />
         </div>
       </div>
 
