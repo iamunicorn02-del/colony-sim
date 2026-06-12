@@ -13,10 +13,10 @@ export const ENERGY_DECREASE_RANGE = { min: 3, max: 7 };
 
 // Eating: how much food is consumed and hunger restored per tick.
 export const FOOD_PER_EAT = 1;
-export const HUNGER_RESTORE_RANGE = { min: 50, max: 70 };
+export const HUNGER_RESTORE_RANGE = { min: 45, max: 60 };
 
 // Resting: energy restored per tick.
-export const ENERGY_RESTORE_REST_RANGE = { min: 45, max: 75 };
+export const ENERGY_RESTORE_REST_RANGE = { min: 15, max: 20 };
 
 // Health damage when hunger or energy hit zero.
 export const STARVATION_HEALTH_DAMAGE_RANGE = { min: 5, max: 10 };
@@ -29,18 +29,18 @@ export const HEALTH_RECOVERY_ENERGY_THRESHOLD = 50;
 
 // Mood: change ranges and thresholds.
 export const MOOD_INCREASE_RANGE = { min: 5, max: 10 };
-export const MOOD_DECREASE_RANGE = { min: 5, max: 10 };
-export const MOOD_GOOD_THRESHOLD = 70;  // all three stats must exceed this
-export const MOOD_BAD_THRESHOLD = 30;   // any stat below this triggers penalty
+export const MOOD_DECREASE_RANGE = { min: 3, max: 5 };
+export const MOOD_GOOD_THRESHOLD = 60;  // all three stats must exceed this
+export const MOOD_BAD_THRESHOLD = 20;   // any stat below this triggers penalty
 
 // Death: critically low health + mood thresholds.
 export const DEATH_HEALTH_THRESHOLD = 3;
 export const DEATH_MOOD_THRESHOLD = 5;
-export const DEATH_CHANCE = 0.3;
+export const DEATH_CHANCE = 0.5;
 
 // Action-switch triggers: hunger/energy below these → eat / rest.
-export const HUNGER_EATING_THRESHOLD = 25;
-export const ENERGY_RESTING_THRESHOLD = 20;
+export const HUNGER_EATING_THRESHOLD = 40;
+export const ENERGY_RESTING_THRESHOLD = 70;
 
 // --- Stat Bounds -----------------------------------------------------------
 // Floor and ceiling for all human stats (hunger, energy, health, mood).
@@ -50,7 +50,7 @@ export const STAT_MAX = 100;
 // --- Human Behaviour -------------------------------------------------------
 // Movement: chance to move each tick and delta range.
 export const HUMAN_MOVE_CHANCE = 0.3;
-export const HUMAN_MOVE_DELTA_RANGE = { min: -1, max: 1 };
+export const HUMAN_MOVE_DELTA_RANGE = { min: -2, max: 2 };
 
 // City initialisation: how many humans spawn per city.
 export const HUMANS_PER_CITY_RANGE = { min: 5, max: 10 };
@@ -65,7 +65,7 @@ export const HUMAN_INITIAL_HEALTH_RANGE = { min: 70, max: 100 };
 export const HUMAN_INITIAL_MOOD_RANGE = { min: 60, max: 100 };
 
 // Birth conditions.
-export const BIRTH_AVG_MOOD_THRESHOLD = 70;
+export const BIRTH_AVG_MOOD_THRESHOLD = 60;
 export const BIRTH_FOOD_SURPLUS_MULTIPLIER = 2;
 
 // --- City Ages -------------------------------------------------------------
