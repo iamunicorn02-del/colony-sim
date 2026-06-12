@@ -87,7 +87,8 @@ export type EventKind =
   | 'epidemic'
   | 'caravan'
   | 'fortune'
-  | 'misfortune';
+  | 'misfortune'
+  | 'human_action';
 
 export type Event = {
   id: string;

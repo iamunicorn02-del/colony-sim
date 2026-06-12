@@ -13,6 +13,13 @@ import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';
 
 const WORLD_ID_KEY = 'colony-sim:worldId';
 
+const HUMAN_ACTION_RU: Record<string, string> = {
+  idle: 'отдыхает',
+  moving: 'двигается',
+  eating: 'ест',
+  resting: 'отдыхает',
+};
+
 export function WorldView() {
   const [world, setWorld] = useState<World | null>(null);
   const [humans, setHumans] = useState<Record<string, Human>>({});
@@ -79,20 +86,44 @@ export function WorldView() {
 
         unsub = socket.onMessage((msg) => {
           switch (msg.type) {
-            case 'worldState':
-              setWorld(msg.world as World);
-              setHumans((msg.world as World).humans);
+            case 'worldState': {
+              const newWorld = msg.world as World;
+              const newHumans = newWorld.humans;
+              setWorld(newWorld);
+              setHumans(newHumans);
               setDay(msg.day);
-              setEventLog(msg.eventLog as Event[]);
               setDailyStory(msg.dailyStory ?? null);
               setTradeLinks(msg.tradeLinks ?? []);
               setLoading(false);
+
+              // Detect human action changes and generate events
+              const prevHumans = prevHumansRef.current;
+              const actionEvents: Event[] = [];
+              for (const [id, human] of Object.entries(newHumans)) {
+                const prev = prevHumans[id];
+                if (prev && prev.currentAction !== human.currentAction) {
+                  const actionRu = HUMAN_ACTION_RU[human.currentAction] ?? human.currentAction;
+                  actionEvents.push({
+                    id: crypto.randomUUID(),
+                    day: msg.day,
+                    message: `${human.name} ${actionRu}`,
+                    kind: 'human_action',
+                  });
+                }
+              }
+              prevHumansRef.current = newHumans;
+
+              setEventLog(
+                [...(msg.eventLog as Event[]), ...actionEvents].slice(-50)
+              );
+
               // Update camera target to follow selected human
-              if (selectedHumanIdRef.current && (msg.world as World).humans[selectedHumanIdRef.current]) {
-                const h = (msg.world as World).humans[selectedHumanIdRef.current];
+              if (selectedHumanIdRef.current && newHumans[selectedHumanIdRef.current]) {
+                const h = newHumans[selectedHumanIdRef.current];
                 setCameraTarget({ x: h.x, y: h.y });
               }
               break;
+            }
             case 'event':
               setEventLog((prev) =>
                 [...prev, { id: crypto.randomUUID(), day: msg.day, message: msg.message, kind: (msg.kind as EventKind) ?? 'minor' }].slice(-50)

@@ -26,6 +26,7 @@ const EVENT_KIND_COLOR: Record<EventKind, string> = {
     caravan: '#8b5cf6',
     fortune: '#fbbf24',
     misfortune: '#78716c',
+    human_action: '#06b6d4',
 };
 
 export function EventLog({ eventLog }: EventLogsProps) {
