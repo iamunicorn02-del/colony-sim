@@ -302,9 +302,9 @@
         "dependencies": [
           "1"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-06-11T22:05:01.451Z"
+        "updatedAt": "2026-06-12T06:37:29.553Z"
       },
       {
         "id": "13",
@@ -318,8 +318,9 @@
           "11",
           "12"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-12T06:41:23.523Z"
       },
       {
         "id": "14",
@@ -332,7 +333,7 @@
         "dependencies": [
           "13"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -419,7 +420,8 @@
             "testStrategy": "Select a human and verify the map centers on them. Move the camera manually, then select another human and verify it re-centers.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-06-12T06:41:24.403Z"
       },
       {
         "id": "15",
@@ -439,9 +441,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-06-11T22:05:01.452Z",
+      "lastModified": "2026-06-12T06:41:24.404Z",
       "taskCount": 15,
-      "completedCount": 11,
+      "completedCount": 13,
       "tags": [
         "master"
       ]
