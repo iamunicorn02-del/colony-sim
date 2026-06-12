@@ -15,6 +15,9 @@ import {
   CITY_STATUS_COLORS,
 } from '../app/config';
 
+const randInt = (min: number, max: number): number =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
 const FOOD_PER_TILE: Record<TileType, number> = {
   [TileType.GRASS]: FOOD_PER_GRASS_TILE,
   [TileType.WATER]: FOOD_PER_WATER_TILE,
@@ -125,9 +128,19 @@ export const updateWorldForNewDay = (world: World): World => {
       }
     }
 
-    h.hunger = Math.max(0, h.hunger - (Math.floor(Math.random() * 6) + 5));
-    h.energy = Math.max(0, h.energy - (Math.floor(Math.random() * 5) + 3));
-    if (h.hunger < 20) h.currentAction = 'eating';
+    h.hunger = Math.max(0, h.hunger - randInt(5, 10));
+    h.energy = Math.max(0, h.energy - randInt(3, 7));
+
+    // Eating: consume food from city to restore hunger
+    if (human.currentAction === 'eating') {
+      const city = updatedWorld.cities.find((c) => c.id === human.cityId);
+      if (city && city.food >= 1) {
+        city.food -= 1;
+        h.hunger = Math.min(100, h.hunger + randInt(50, 70));
+      }
+    }
+
+    if (h.hunger < 25) h.currentAction = 'eating';
     else if (h.energy < 20) h.currentAction = 'resting';
     else h.currentAction = 'idle';
     updatedWorld.humans[h.id] = h;
