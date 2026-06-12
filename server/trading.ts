@@ -6,6 +6,12 @@ import {
   FOOD_STORAGE_PER_CAPITA,
   FOOD_CONSUMPTION_PER_CAPITA,
 } from '../app/config';
+import {
+  TRADE_SURPLUS_DAYS_THRESHOLD,
+  TRADE_DEFICIT_DAYS_THRESHOLD,
+  ISOLATED_TRADE_RADIUS_MULT,
+  TRADER_TRADE_RADIUS_MULT,
+} from './config/serverConfig';
 
 export interface TradeLink {
   sellerId: string;
@@ -15,20 +21,20 @@ export interface TradeLink {
 }
 
 /**
- * A city sells when it has more than ~10 days of food stored per citizen.
- * This means it has a large comfortable surplus it can safely trade away.
+ * A city sells when it has more than TRADE_SURPLUS_DAYS_THRESHOLD days of food
+ * stored per citizen — a large comfortable surplus it can safely trade away.
  */
 const hasFoodSurplus = (city: City): boolean => {
-  const threshold = city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * 10;
+  const threshold = city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * TRADE_SURPLUS_DAYS_THRESHOLD;
   return city.food > threshold;
 };
 
 /**
- * A city buys when it has less than ~1 day of food stored per citizen.
- * It is close to starvation and urgently needs to replenish.
+ * A city buys when it has less than TRADE_DEFICIT_DAYS_THRESHOLD days of food
+ * stored per citizen — close to starvation and urgently needs to replenish.
  */
 const hasFoodDeficit = (city: City): boolean => {
-  const threshold = city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * 1;
+  const threshold = city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * TRADE_DEFICIT_DAYS_THRESHOLD;
   return city.food < threshold;
 };
 
@@ -37,8 +43,8 @@ const distance = (a: City, b: City): number =>
 
 /** Isolated cities only trade when the partner is unusually close. */
 const effectiveTradeRadius = (city: City): number => {
-  if (city.traits.includes(CityTrait.ISOLATED)) return TRADE_RADIUS * 0.5;
-  if (city.traits.includes(CityTrait.TRADER)) return TRADE_RADIUS * 1.3;
+  if (city.traits.includes(CityTrait.ISOLATED)) return TRADE_RADIUS * ISOLATED_TRADE_RADIUS_MULT;
+  if (city.traits.includes(CityTrait.TRADER)) return TRADE_RADIUS * TRADER_TRADE_RADIUS_MULT;
   return TRADE_RADIUS;
 };
 
@@ -68,8 +74,8 @@ export const resolveTrades = (
       if (!hasFoodDeficit(buyer)) continue;
       if (distance(seller, buyer) > effectiveTradeRadius(seller)) continue;
 
-      // How much food the seller is willing to part with (everything above the 10-day safety reserve).
-      const surplus = seller.food - seller.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * 10;
+      // How much food the seller is willing to part with (everything above the safety reserve).
+      const surplus = seller.food - seller.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * TRADE_SURPLUS_DAYS_THRESHOLD;
       const foodToSell = Math.max(1, Math.floor(surplus * TRADE_SURPLUS_FRACTION));
 
       // How much the buyer can afford.

@@ -5,6 +5,10 @@ import { computeCityStatus, updateWorldForNewDay } from './simulationEngine';
 import { maybeGenerateEvent } from './worldEvents';
 import { resolveTrades } from './trading';
 import { generateHumansForCity } from './humanGenerator';
+import { HUMANS_PER_CITY_RANGE } from './config/serverConfig';
+
+const randInt = (min: number, max: number): number =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
 
 export type WorldEntry = {
   id: string;
@@ -24,7 +28,7 @@ let nextId = 1;
 export function createWorldEntry(world: World): string {
   // Generate humans for each city
   for (const city of world.cities) {
-    const count = Math.floor(Math.random() * 6) + 5; // 5-10
+    const count = randInt(HUMANS_PER_CITY_RANGE.min, HUMANS_PER_CITY_RANGE.max);
     const humans = generateHumansForCity(city, count);
     const ids: string[] = [];
     for (const human of humans) {

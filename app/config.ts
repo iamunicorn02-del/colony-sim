@@ -42,7 +42,6 @@ export const CITY_NAME_SUFFIXES = [
   'vale',
 ];
 
-export const CITY_INITIAL_POPULATION_RANGE = { min: 60, max: 450 };
 export const CITY_INITIAL_FOOD_RANGE = { min: 100, max: 400 };
 export const CITY_INITIAL_GOLD_RANGE = { min: 50, max: 200 };
 
@@ -79,10 +78,6 @@ export const GOLD_TAX_PER_CAPITA = 0.02;
 // Population dynamics driven by the food balance.
 // Fraction of citizens added per day when there is a food surplus.
 export const POPULATION_GROWTH_RATE = 0.02;
-// Fraction of citizens lost per day when the granary is empty (starvation).
-export const POPULATION_STARVATION_RATE = 0.05;
-// A city can never drop below this many citizens.
-export const MIN_CITY_POPULATION = 1;
 
 // --- Trade ---
 // Max distance (in tiles) between two cities for them to trade.

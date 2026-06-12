@@ -19,6 +19,7 @@ import {
   CITY_INITIAL_GOLD_RANGE,
   CITY_TRAIT_COUNT,
   CITY_TRAIT_POOL,
+  CITY_STATUS_COLORS,
 } from '../app/config';
 import { computeCityStatus } from './simulationEngine';
 
@@ -78,7 +79,7 @@ const generateCities = (map: TileMap, random: () => number): City[] => {
       food: getRandomInt(random, CITY_INITIAL_FOOD_RANGE.min, CITY_INITIAL_FOOD_RANGE.max),
       gold: getRandomInt(random, CITY_INITIAL_GOLD_RANGE.min, CITY_INITIAL_GOLD_RANGE.max),
       traits: pickTraits(random),
-      status: { state: 'stable', color: '#facc15' },
+      status: { state: 'stable', color: CITY_STATUS_COLORS.stable },
       relationships: {},
       goldenAgeDays: 0,
       darkAgeDays: 0,

@@ -16,6 +16,47 @@ import {
   CITY_STATUS_COLORS,
   TRADE_RADIUS,
 } from '../app/config';
+import {
+  GOLDEN_AGE_FOOD_BONUS_MULT,
+  GOLDEN_AGE_GOLD_BONUS_MULT,
+  GOLDEN_AGE_DURATION_DAYS,
+  DARK_AGE_GOLD_LOSS_FRAC,
+  DARK_AGE_DURATION_DAYS,
+  DROUGHT_RESISTANCE_MULT,
+  DROUGHT_FOOD_LOSS_FRAC,
+  DROUGHT_FOOD_THRESHOLD_MULT,
+  FLOOD_RESISTANCE_MULT,
+  FLOOD_FOOD_LOSS_FRAC,
+  FLOOD_WATER_SEARCH_RADIUS,
+  EPIDEMIC_RESISTANCE_MULT,
+  EPIDEMIC_POP_LOSS_RANGE,
+  EPIDEMIC_DURATION_DAYS,
+  EPIDEMIC_SPREAD_CHANCE,
+  EPIDEMIC_SPREAD_POP_LOSS,
+  EPIDEMIC_SPREAD_DURATION_DAYS,
+  EPIDEMIC_MIN_POPULATION,
+  CONFLICT_POP_LOSS_RANGE,
+  FORTUNATE_BONUS_CHANCE,
+  DOOMED_MISFORTUNE_CHANCE,
+  COLONY_MIN_POPULATION,
+  COLONY_MIN_GOLD,
+  COLONY_MAX_ATTEMPTS,
+  COLONY_SEARCH_RADIUS,
+  COLONY_MIN_CITY_DISTANCE,
+  COLONY_COLONIST_FRAC,
+  COLONY_FOOD_FRAC,
+  COLONY_STARTING_GOLD,
+  COLONY_PARENT_GOLD_COST,
+  CARAVAN_SURPLUS_THRESHOLD_MULT,
+  EVENT_GENERATION_MAX_ATTEMPTS,
+  PLAGUE_RESISTANCE_BASE,
+  FORTUNATE_DARK_AGE_RESIST_CHANCE,
+  FORTUNATE_GOLD_BONUS_RANGE,
+  DOOMED_FOOD_LOSS_RANGE,
+  ALLIANCE_GOLD_BONUS_RANGE,
+  CARAVAN_FOOD_TRADED_RANGE,
+  CARAVAN_GOLD_TRADED_RANGE,
+} from './config/serverConfig';
 
 const getRandomInt = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -78,7 +119,7 @@ const EVENT_DEFS: EventDef[] = [
     severity: 'major',
     apply: (world) => {
       const city = pickRandom(world.cities);
-      if (isResisted(city, 1)) return null;
+      if (isResisted(city, PLAGUE_RESISTANCE_BASE)) return null;
       const rate = getRandomFloat(PLAGUE_POPULATION_LOSS_RATE.min, PLAGUE_POPULATION_LOSS_RATE.max);
       const lost = Math.ceil(city.humanIds.length * rate);
       const actualLost = Math.min(lost, city.humanIds.length);
@@ -101,13 +142,13 @@ const EVENT_DEFS: EventDef[] = [
       const ratio = city.food / (city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA);
       if (ratio < CITY_STATUS_THRESHOLDS.thriving) return null;
       if (city.traits.includes(CityTrait.DOOMED)) return null;
-      const foodBonus = Math.floor(city.humanIds.length * 0.5);
-      const goldBonus = Math.floor(city.humanIds.length * 0.2);
+      const foodBonus = Math.floor(city.humanIds.length * GOLDEN_AGE_FOOD_BONUS_MULT);
+      const goldBonus = Math.floor(city.humanIds.length * GOLDEN_AGE_GOLD_BONUS_MULT);
       const updated: City = {
         ...city,
         food: city.food + foodBonus,
         gold: city.gold + goldBonus,
-        goldenAgeDays: 10,
+        goldenAgeDays: GOLDEN_AGE_DURATION_DAYS,
         status: { state: 'golden_age', color: CITY_STATUS_COLORS.golden_age },
       };
       return {
@@ -127,12 +168,12 @@ const EVENT_DEFS: EventDef[] = [
       const city = pickRandom(world.cities);
       const ratio = city.food / (city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA);
       if (ratio >= CITY_STATUS_THRESHOLDS.struggling) return null;
-      if (city.traits.includes(CityTrait.FORTUNATE) && Math.random() < 0.5) return null;
-      const goldLoss = Math.floor(city.gold * 0.2);
+      if (city.traits.includes(CityTrait.FORTUNATE) && Math.random() < FORTUNATE_DARK_AGE_RESIST_CHANCE) return null;
+      const goldLoss = Math.floor(city.gold * DARK_AGE_GOLD_LOSS_FRAC);
       const updated: City = {
         ...city,
         gold: Math.max(0, city.gold - goldLoss),
-        darkAgeDays: 8,
+        darkAgeDays: DARK_AGE_DURATION_DAYS,
         status: { state: 'dark_age', color: CITY_STATUS_COLORS.dark_age },
       };
       return {
@@ -150,9 +191,9 @@ const EVENT_DEFS: EventDef[] = [
     severity: 'major',
     apply: (world) => {
       const city = pickRandom(world.cities);
-      if (city.food > city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * 5) return null;
-      if (isResisted(city, 0.8)) return null;
-      const loss = Math.floor(city.food * 0.3);
+      if (city.food > city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * DROUGHT_FOOD_THRESHOLD_MULT) return null;
+      if (isResisted(city, DROUGHT_RESISTANCE_MULT)) return null;
+      const loss = Math.floor(city.food * DROUGHT_FOOD_LOSS_FRAC);
       const updated: City = { ...city, food: Math.max(0, city.food - loss) };
       return {
         world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
@@ -170,8 +211,8 @@ const EVENT_DEFS: EventDef[] = [
     apply: (world) => {
       const city = pickRandom(world.cities);
       if (!city.traits.includes(CityTrait.FORTUNATE)) return null;
-      if (Math.random() > 0.3) return null;
-      const goldBonus = getRandomInt(20, 80);
+      if (Math.random() > FORTUNATE_BONUS_CHANCE) return null;
+      const goldBonus = getRandomInt(FORTUNATE_GOLD_BONUS_RANGE.min, FORTUNATE_GOLD_BONUS_RANGE.max);
       const updated: City = { ...city, gold: city.gold + goldBonus };
       return {
         world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
@@ -189,8 +230,8 @@ const EVENT_DEFS: EventDef[] = [
     apply: (world) => {
       const city = pickRandom(world.cities);
       if (!city.traits.includes(CityTrait.DOOMED)) return null;
-      if (Math.random() > 0.25) return null;
-      const foodLoss = getRandomInt(15, 60);
+      if (Math.random() > DOOMED_MISFORTUNE_CHANCE) return null;
+      const foodLoss = getRandomInt(DOOMED_FOOD_LOSS_RANGE.min, DOOMED_FOOD_LOSS_RANGE.max);
       const updated: City = { ...city, food: Math.max(0, city.food - foodLoss) };
       return {
         world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
@@ -209,8 +250,8 @@ const EVENT_DEFS: EventDef[] = [
       const parent = world.cities.find(
         (c) =>
           c.traits.includes(CityTrait.EXPANSIONIST) &&
-          c.humanIds.length >= 300 &&
-          c.gold >= 100,
+          c.humanIds.length >= COLONY_MIN_POPULATION &&
+          c.gold >= COLONY_MIN_GOLD,
       );
       if (!parent) return null;
 
@@ -218,16 +259,16 @@ const EVENT_DEFS: EventDef[] = [
       const map = world.map;
       let bestX = -1;
       let bestY = -1;
-      for (let attempt = 0; attempt < 100; attempt++) {
-        const dx = getRandomInt(-8, 8);
-        const dy = getRandomInt(-8, 8);
+      for (let attempt = 0; attempt < COLONY_MAX_ATTEMPTS; attempt++) {
+        const dx = getRandomInt(-COLONY_SEARCH_RADIUS, COLONY_SEARCH_RADIUS);
+        const dy = getRandomInt(-COLONY_SEARCH_RADIUS, COLONY_SEARCH_RADIUS);
         const x = parent.x + dx;
         const y = parent.y + dy;
         if (x < 0 || x >= map[0].length || y < 0 || y >= map.length) continue;
         if (map[y][x].type !== 'grass') continue;
         // Must be far enough from all existing cities
         const tooClose = world.cities.some(
-          (c) => Math.hypot(c.x - x, c.y - y) < 5,
+          (c) => Math.hypot(c.x - x, c.y - y) < COLONY_MIN_CITY_DISTANCE,
         );
         if (tooClose) continue;
         bestX = x;
@@ -237,7 +278,7 @@ const EVENT_DEFS: EventDef[] = [
       if (bestX === -1) return null;
 
       const colonyName = parent.name + ' Colony';
-      const colonistsCount = Math.floor(parent.humanIds.length * 0.15);
+      const colonistsCount = Math.floor(parent.humanIds.length * COLONY_COLONIST_FRAC);
       const colonists = parent.humanIds.slice(0, colonistsCount);
       const colony: City = {
         id: `city-${world.cities.length + 1}-${Date.now()}`,
@@ -245,22 +286,22 @@ const EVENT_DEFS: EventDef[] = [
         x: bestX,
         y: bestY,
         humanIds: colonists,
-        food: Math.floor(parent.food * 0.1),
-        gold: 20,
+        food: Math.floor(parent.food * COLONY_FOOD_FRAC),
+        gold: COLONY_STARTING_GOLD,
         traits: [],
-        status: { state: 'stable', color: '#facc15' },
+        status: { state: 'stable', color: CITY_STATUS_COLORS.stable },
         relationships: { [parent.id]: 'ally' },
         goldenAgeDays: 0,
         darkAgeDays: 0,
         epidemicDays: 0,
       };
-      colony.status = { state: 'stable', color: '#facc15' };
+      colony.status = { state: 'stable', color: CITY_STATUS_COLORS.stable };
 
       // Parent loses colonists and gold
       const updatedParent: City = {
         ...parent,
         humanIds: parent.humanIds.slice(colonistsCount),
-        gold: parent.gold - 50,
+        gold: parent.gold - COLONY_PARENT_GOLD_COST,
         relationships: { ...parent.relationships, [colony.id]: 'ally' },
       };
 
@@ -291,8 +332,8 @@ const EVENT_DEFS: EventDef[] = [
       if (nearby.length === 0) return null;
       const b = pickRandom(nearby);
 
-      const lossA = Math.ceil(a.humanIds.length * getRandomFloat(0.05, 0.15));
-      const lossB = Math.ceil(b.humanIds.length * getRandomFloat(0.05, 0.15));
+      const lossA = Math.ceil(a.humanIds.length * getRandomFloat(CONFLICT_POP_LOSS_RANGE.min, CONFLICT_POP_LOSS_RANGE.max));
+      const lossB = Math.ceil(b.humanIds.length * getRandomFloat(CONFLICT_POP_LOSS_RANGE.min, CONFLICT_POP_LOSS_RANGE.max));
       const updatedA: City = {
         ...a,
         humanIds: a.humanIds.slice(lossA),
@@ -336,7 +377,7 @@ const EVENT_DEFS: EventDef[] = [
       if (nearby.length === 0) return null;
       const b = pickRandom(nearby);
 
-      const goldBonus = getRandomInt(10, 40);
+      const goldBonus = getRandomInt(ALLIANCE_GOLD_BONUS_RANGE.min, ALLIANCE_GOLD_BONUS_RANGE.max);
       const updatedA: City = {
         ...a,
         gold: a.gold + goldBonus,
@@ -372,8 +413,8 @@ const EVENT_DEFS: EventDef[] = [
       // Check if city is near water
       const map = world.map;
       let nearWater = false;
-      for (let dy = -3; dy <= 3 && !nearWater; dy++) {
-        for (let dx = -3; dx <= 3 && !nearWater; dx++) {
+      for (let dy = -FLOOD_WATER_SEARCH_RADIUS; dy <= FLOOD_WATER_SEARCH_RADIUS && !nearWater; dy++) {
+        for (let dx = -FLOOD_WATER_SEARCH_RADIUS; dx <= FLOOD_WATER_SEARCH_RADIUS && !nearWater; dx++) {
           const x = city.x + dx;
           const y = city.y + dy;
           if (x >= 0 && x < map[0].length && y >= 0 && y < map.length) {
@@ -382,9 +423,9 @@ const EVENT_DEFS: EventDef[] = [
         }
       }
       if (!nearWater) return null;
-      if (isResisted(city, 0.7)) return null;
+      if (isResisted(city, FLOOD_RESISTANCE_MULT)) return null;
 
-      const loss = Math.floor(city.food * 0.25);
+      const loss = Math.floor(city.food * FLOOD_FOOD_LOSS_FRAC);
       const updated: City = { ...city, food: Math.max(0, city.food - loss) };
       return {
         world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
@@ -402,17 +443,17 @@ const EVENT_DEFS: EventDef[] = [
     apply: (world) => {
       // Pick a city that is NOT isolated and has decent population
       const candidates = world.cities.filter(
-        (c) => !c.traits.includes(CityTrait.ISOLATED) && c.humanIds.length >= 50,
+        (c) => !c.traits.includes(CityTrait.ISOLATED) && c.humanIds.length >= EPIDEMIC_MIN_POPULATION,
       );
       if (candidates.length === 0) return null;
       const origin = pickRandom(candidates);
-      if (isResisted(origin, 0.6)) return null;
+      if (isResisted(origin, EPIDEMIC_RESISTANCE_MULT)) return null;
 
-      const loss = Math.ceil(origin.humanIds.length * getRandomFloat(0.08, 0.2));
+      const loss = Math.ceil(origin.humanIds.length * getRandomFloat(EPIDEMIC_POP_LOSS_RANGE.min, EPIDEMIC_POP_LOSS_RANGE.max));
       const updated: City = {
         ...origin,
         humanIds: origin.humanIds.slice(loss),
-        epidemicDays: 5,
+        epidemicDays: EPIDEMIC_DURATION_DAYS,
       };
 
       // Spread to nearby non-isolated cities
@@ -423,15 +464,15 @@ const EVENT_DEFS: EventDef[] = [
           !c.traits.includes(CityTrait.ISOLATED) &&
           c.epidemicDays === 0 &&
           Math.hypot(c.x - origin.x, c.y - origin.y) <= TRADE_RADIUS &&
-          Math.random() < 0.4,
+          Math.random() < EPIDEMIC_SPREAD_CHANCE,
       );
 
       for (const target of spreadTargets) {
-        const spreadLoss = Math.ceil(target.humanIds.length * 0.05);
+        const spreadLoss = Math.ceil(target.humanIds.length * EPIDEMIC_SPREAD_POP_LOSS);
         const spreadUpdated: City = {
           ...target,
           humanIds: target.humanIds.slice(spreadLoss),
-          epidemicDays: 3,
+          epidemicDays: EPIDEMIC_SPREAD_DURATION_DAYS,
         };
         newCities = newCities.map((c) => (c.id === target.id ? spreadUpdated : c));
       }
@@ -455,11 +496,11 @@ const EVENT_DEFS: EventDef[] = [
       const partner = findNearbyCity(world, city);
       if (!partner) return null;
 
-      const foodTraded = getRandomInt(5, 25);
-      const goldTraded = getRandomInt(5, 20);
+      const foodTraded = getRandomInt(CARAVAN_FOOD_TRADED_RANGE.min, CARAVAN_FOOD_TRADED_RANGE.max);
+      const goldTraded = getRandomInt(CARAVAN_GOLD_TRADED_RANGE.min, CARAVAN_GOLD_TRADED_RANGE.max);
 
       // Only trade if the seller has surplus
-      if (city.food < city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * 3) return null;
+      if (city.food < city.humanIds.length * FOOD_CONSUMPTION_PER_CAPITA * CARAVAN_SURPLUS_THRESHOLD_MULT) return null;
 
       const updatedSeller: City = {
         ...city,
@@ -508,7 +549,7 @@ export const maybeGenerateEvent = (
   if (world.cities.length === 0) return null;
   if (Math.random() >= EVENT_DAILY_CHANCE) return null;
 
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; attempt < EVENT_GENERATION_MAX_ATTEMPTS; attempt++) {
     const def = pickEventDef();
     const result = def.apply(world);
     if (!result) continue;

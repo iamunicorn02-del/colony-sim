@@ -10,14 +10,49 @@ import {
   FOOD_CONSUMPTION_PER_CAPITA,
   FOOD_STORAGE_PER_CAPITA,
   GOLD_TAX_PER_CAPITA,
+  POPULATION_GROWTH_RATE,
   TRAIT_FOOD_BONUS,
   TRAIT_GOLD_BONUS,
   CITY_STATUS_THRESHOLDS,
   CITY_STATUS_COLORS,
 } from '../app/config';
+import {
+  HUNGER_DECREASE_RANGE,
+  ENERGY_DECREASE_RANGE,
+  FOOD_PER_EAT,
+  HUNGER_RESTORE_RANGE,
+  ENERGY_RESTORE_REST_RANGE,
+  STARVATION_HEALTH_DAMAGE_RANGE,
+  EXHAUSTION_HEALTH_DAMAGE_RANGE,
+  HEALTH_RECOVERY_RANGE,
+  HEALTH_RECOVERY_HUNGER_THRESHOLD,
+  HEALTH_RECOVERY_ENERGY_THRESHOLD,
+  MOOD_INCREASE_RANGE,
+  MOOD_DECREASE_RANGE,
+  MOOD_GOOD_THRESHOLD,
+  MOOD_BAD_THRESHOLD,
+  DEATH_CHANCE,
+  DEATH_HEALTH_THRESHOLD,
+  DEATH_MOOD_THRESHOLD,
+  HUNGER_EATING_THRESHOLD,
+  ENERGY_RESTING_THRESHOLD,
+  HUMAN_MOVE_CHANCE,
+  HUMAN_MOVE_DELTA_RANGE,
+  STAT_MIN,
+  STAT_MAX,
+  GOLDEN_AGE_FOOD_PRODUCTION_MULT,
+  GOLDEN_AGE_GOLD_PRODUCTION_MULT,
+  DARK_AGE_FOOD_PRODUCTION_PENALTY,
+  DARK_AGE_GOLD_PRODUCTION_PENALTY,
+  BIRTH_AVG_MOOD_THRESHOLD,
+  BIRTH_FOOD_SURPLUS_MULTIPLIER,
+} from './config/serverConfig';
 
 const randInt = (min: number, max: number): number =>
   Math.floor(Math.random() * (max - min + 1)) + min;
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
 
 const FOOD_PER_TILE: Record<TileType, number> = {
   [TileType.GRASS]: FOOD_PER_GRASS_TILE,
@@ -75,12 +110,12 @@ const updateCityForNewDay = (city: City, map: TileMap, world: World): { city: Ci
   let stateFoodMult = 1;
   let stateGoldMult = 1;
   if (city.goldenAgeDays > 0) {
-    stateFoodMult += 0.2;
-    stateGoldMult += 0.15;
+    stateFoodMult += GOLDEN_AGE_FOOD_PRODUCTION_MULT;
+    stateGoldMult += GOLDEN_AGE_GOLD_PRODUCTION_MULT;
   }
   if (city.darkAgeDays > 0) {
-    stateFoodMult -= 0.15;
-    stateGoldMult -= 0.2;
+    stateFoodMult += DARK_AGE_FOOD_PRODUCTION_PENALTY;
+    stateGoldMult += DARK_AGE_GOLD_PRODUCTION_PENALTY;
   }
 
   const production = computeFoodProduction(city, map) * (1 + foodBonus) * stateFoodMult;
@@ -120,7 +155,7 @@ const updateCityForNewDay = (city: City, map: TileMap, world: World): { city: Ci
   }
 
   // Task 7.2 & 7.3: Check birth conditions and generate new human
-  if (avgMood > 70 && city.food > pop * 2) {
+  if (avgMood > BIRTH_AVG_MOOD_THRESHOLD && city.food > pop * BIRTH_FOOD_SURPLUS_MULTIPLIER) {
     if (Math.random() < POPULATION_GROWTH_RATE) {
       const newHumans = generateHumansForCity(updated, 1);
       for (const newHuman of newHumans) {
@@ -141,9 +176,6 @@ const updateCityForNewDay = (city: City, map: TileMap, world: World): { city: Ci
 
   return { city: updated, events };
 };
-
-const DEATH_CHANCE = 0.3;
-const POPULATION_GROWTH_RATE = 0.02;
 
 const handleHumanDeath = (h: Human, updatedWorld: World, events: Event[]): void => {
   delete updatedWorld.humans[h.id];
@@ -181,49 +213,51 @@ export const updateWorldForNewDay = (world: World): { world: World; events: Even
   for (const human of Object.values(world.humans)) {
     const h = { ...human };
 
-    // Movement: only if not eating or resting, 30% chance to move
+    // Movement: only if not eating or resting
     if (human.currentAction !== 'eating' && human.currentAction !== 'resting') {
-      if (Math.random() < 0.3) {
-        const dx = Math.floor(Math.random() * 3) - 1; // -1, 0, or +1
-        const dy = Math.floor(Math.random() * 3) - 1; // -1, 0, or +1
-        h.x = Math.max(0, Math.min(99, h.x + dx));
-        h.y = Math.max(0, Math.min(99, h.y + dy));
+      if (Math.random() < HUMAN_MOVE_CHANCE) {
+        const dx = randInt(HUMAN_MOVE_DELTA_RANGE.min, HUMAN_MOVE_DELTA_RANGE.max);
+        const dy = randInt(HUMAN_MOVE_DELTA_RANGE.min, HUMAN_MOVE_DELTA_RANGE.max);
+        h.x = clamp(h.x + dx, 0, MAP_WIDTH - 1);
+        h.y = clamp(h.y + dy, 0, MAP_HEIGHT - 1);
         h.currentAction = 'moving';
       }
     }
 
-    h.hunger = Math.max(0, h.hunger - randInt(5, 10));
-    h.energy = Math.max(0, h.energy - randInt(3, 7));
+    h.hunger = clamp(h.hunger - randInt(HUNGER_DECREASE_RANGE.min, HUNGER_DECREASE_RANGE.max), STAT_MIN, STAT_MAX);
+    h.energy = clamp(h.energy - randInt(ENERGY_DECREASE_RANGE.min, ENERGY_DECREASE_RANGE.max), STAT_MIN, STAT_MAX);
 
     // Eating: consume food from city to restore hunger
     if (human.currentAction === 'eating') {
       const city = updatedWorld.cities.find((c) => c.id === human.cityId);
-      if (city && city.food >= 1) {
-        city.food -= 1;
-        h.hunger = Math.min(100, h.hunger + randInt(50, 70));
+      if (city && city.food >= FOOD_PER_EAT) {
+        city.food -= FOOD_PER_EAT;
+        h.hunger = clamp(h.hunger + randInt(HUNGER_RESTORE_RANGE.min, HUNGER_RESTORE_RANGE.max), STAT_MIN, STAT_MAX);
       }
     }
 
     // Resting: recover energy
     if (human.currentAction === 'resting') {
-      h.energy = Math.min(100, h.energy + randInt(15, 25));
+      h.energy = clamp(h.energy + randInt(ENERGY_RESTORE_REST_RANGE.min, ENERGY_RESTORE_REST_RANGE.max), STAT_MIN, STAT_MAX);
     }
 
-    // Task 5.1: Health update rules based on hunger and energy
-    if (h.hunger === 0) h.health -= randInt(5, 10);
-    if (h.energy === 0) h.health -= randInt(3, 7);
-    if (h.hunger > 50 && h.energy > 50) h.health += randInt(2, 5);
-    h.health = Math.max(0, Math.min(100, h.health));
+    // Health update rules based on hunger and energy
+    if (h.hunger === 0) h.health -= randInt(STARVATION_HEALTH_DAMAGE_RANGE.min, STARVATION_HEALTH_DAMAGE_RANGE.max);
+    if (h.energy === 0) h.health -= randInt(EXHAUSTION_HEALTH_DAMAGE_RANGE.min, EXHAUSTION_HEALTH_DAMAGE_RANGE.max);
+    if (h.hunger > HEALTH_RECOVERY_HUNGER_THRESHOLD && h.energy > HEALTH_RECOVERY_ENERGY_THRESHOLD) {
+      h.health += randInt(HEALTH_RECOVERY_RANGE.min, HEALTH_RECOVERY_RANGE.max);
+    }
+    h.health = clamp(h.health, STAT_MIN, STAT_MAX);
 
-    // Task 6: Mood update rules
-    if (h.hunger > 70 && h.energy > 70 && h.health > 70) {
-      h.mood = Math.min(100, h.mood + randInt(5, 10));
-    } else if (h.hunger < 30 || h.energy < 30 || h.health < 30) {
-      h.mood = Math.max(0, h.mood - randInt(5, 10));
+    // Mood update rules
+    if (h.hunger > MOOD_GOOD_THRESHOLD && h.energy > MOOD_GOOD_THRESHOLD && h.health > MOOD_GOOD_THRESHOLD) {
+      h.mood = clamp(h.mood + randInt(MOOD_INCREASE_RANGE.min, MOOD_INCREASE_RANGE.max), STAT_MIN, STAT_MAX);
+    } else if (h.hunger < MOOD_BAD_THRESHOLD || h.energy < MOOD_BAD_THRESHOLD || h.health < MOOD_BAD_THRESHOLD) {
+      h.mood = clamp(h.mood - randInt(MOOD_DECREASE_RANGE.min, MOOD_DECREASE_RANGE.max), STAT_MIN, STAT_MAX);
     }
 
-    // Task 5.3: Death chance mechanic for critically low stats
-    if (h.health < 3 && h.mood < 5) {
+    // Death chance mechanic for critically low stats
+    if (h.health < DEATH_HEALTH_THRESHOLD && h.mood < DEATH_MOOD_THRESHOLD) {
       if (Math.random() < DEATH_CHANCE) {
         handleHumanDeath(h, updatedWorld, events);
         continue;
@@ -236,8 +270,8 @@ export const updateWorldForNewDay = (world: World): { world: World; events: Even
       continue;
     }
 
-    if (h.hunger < 25) h.currentAction = 'eating';
-    else if (h.energy < 20) h.currentAction = 'resting';
+    if (h.hunger < HUNGER_EATING_THRESHOLD) h.currentAction = 'eating';
+    else if (h.energy < ENERGY_RESTING_THRESHOLD) h.currentAction = 'resting';
     else h.currentAction = 'idle';
     updatedWorld.humans[h.id] = h;
   }
