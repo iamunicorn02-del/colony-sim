@@ -1,4 +1,5 @@
 import { City, CityState, Event, Human, TileMap, TileType, World } from '../app/types/tiles';
+import { generateHumansForCity } from './humanGenerator';
 import {
   MAP_WIDTH,
   MAP_HEIGHT,
@@ -63,7 +64,7 @@ export const computeCityStatus = (city: City): City['status'] => {
   return { state, color: CITY_STATUS_COLORS[state] || '#facc15' };
 };
 
-const updateCityForNewDay = (city: City, map: TileMap): City => {
+const updateCityForNewDay = (city: City, map: TileMap, world: World): { city: City; events: Event[] } => {
   const foodBonus = city.traits.reduce(
     (sum, t) => sum + (TRAIT_FOOD_BONUS[t] || 0), 0,
   );
@@ -104,16 +105,60 @@ const updateCityForNewDay = (city: City, map: TileMap): City => {
     epidemicDays,
   };
   updated.status = computeCityStatus(updated);
-  return updated;
+
+  // Task 7.1: Calculate average mood of city residents
+  const events: Event[] = [];
+  const pop = getPopulation(city);
+  let avgMood = 0;
+  if (pop > 0) {
+    let totalMood = 0;
+    for (const humanId of city.humanIds) {
+      const human = world.humans[humanId];
+      if (human) totalMood += human.mood;
+    }
+    avgMood = totalMood / pop;
+  }
+
+  // Task 7.2 & 7.3: Check birth conditions and generate new human
+  if (avgMood > 70 && city.food > pop * 2) {
+    if (Math.random() < POPULATION_GROWTH_RATE) {
+      const newHumans = generateHumansForCity(updated, 1);
+      for (const newHuman of newHumans) {
+        // Ensure unique ID by appending timestamp
+        newHuman.id = `human-${city.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        updated.humanIds = [...updated.humanIds, newHuman.id];
+        // Store human in world (will be picked up by the caller)
+        world.humans[newHuman.id] = newHuman;
+      }
+      events.push({
+        id: `birth-${city.id}-${Date.now()}`,
+        day: 0,
+        message: `Новый житель родился в ${city.name}`,
+        kind: 'birth',
+      });
+    }
+  }
+
+  return { city: updated, events };
 };
 
 const DEATH_CHANCE = 0.3;
+const POPULATION_GROWTH_RATE = 0.02;
 
 const handleHumanDeath = (h: Human, updatedWorld: World, events: Event[]): void => {
   delete updatedWorld.humans[h.id];
   const city = updatedWorld.cities.find((c) => c.id === h.cityId);
   if (city) {
     city.humanIds = city.humanIds.filter((id) => id !== h.id);
+    // Task 7.4: City destruction when last human dies
+    if (city.humanIds.length === 0) {
+      events.push({
+        id: `city-ruins-${city.id}-${Date.now()}`,
+        day: 0,
+        message: `${city.name} превратился в руины`,
+        kind: 'city_ruins',
+      });
+    }
   }
   events.push({
     id: `death-${h.id}-${Date.now()}`,
@@ -124,12 +169,13 @@ const handleHumanDeath = (h: Human, updatedWorld: World, events: Event[]): void 
 };
 
 export const updateWorldForNewDay = (world: World): { world: World; events: Event[] } => {
+  const cityResults = world.cities.map((city) => updateCityForNewDay(city, world.map, world));
   const updatedWorld: World = {
     ...world,
     humans: { ...world.humans },
-    cities: world.cities.map((city) => updateCityForNewDay(city, world.map)),
+    cities: cityResults.map((r) => r.city),
   };
-  const events: Event[] = [];
+  const events: Event[] = cityResults.flatMap((r) => r.events);
 
   // Update humans
   for (const human of Object.values(world.humans)) {

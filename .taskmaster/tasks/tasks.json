@@ -55,8 +55,9 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-12T09:41:01.213Z"
       },
       {
         "id": "5",
@@ -70,7 +71,7 @@
           "3",
           "4"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -78,9 +79,10 @@
             "description": "Add logic to update human health: hunger=0 → health-=5-10, energy=0 → health-=3-7, both>50 → health+=2-5, clamp 0-100.",
             "dependencies": [],
             "details": "In server/simulationEngine.ts, after updating hunger and energy: if hunger === 0: health -= random(5, 10); if energy === 0: health -= random(3, 7); if hunger > 50 && energy > 50: health += random(2, 5); clamp health to 0-100.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Health decreases when hunger/energy=0, increases when both>50, clamped at 0-100.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-06-12T18:35:37.050Z"
           },
           {
             "id": 2,
@@ -90,9 +92,10 @@
               1
             ],
             "details": "If health <= 0: remove from world.humans, remove humanId from city.humanIds, add eventLog entry: '{name} умер от истощения'.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Human at health=0 is removed from all data structures. Death event is logged.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-06-12T18:35:37.059Z"
           },
           {
             "id": 3,
@@ -102,11 +105,13 @@
               1
             ],
             "details": "After health update: if health < 3 AND mood < 5, apply 30% death chance (DEATH_CHANCE = 0.3). Same removal logic as health <= 0.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Human with health<3 and mood<5 has 30% death chance. No death chance otherwise.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-06-12T18:35:37.067Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-06-12T18:35:37.067Z"
       },
       {
         "id": "6",
@@ -119,7 +124,7 @@
         "dependencies": [
           "5"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -127,11 +132,13 @@
             "description": "All stats > 70 → mood += 5-10. Any stat < 30 → mood -= 5-10. Clamp 0-100.",
             "dependencies": [],
             "details": "In server/simulationEngine.ts, after health update: if hunger > 70 && energy > 70 && health > 70: mood += random(5, 10); if hunger < 30 || energy < 30 || health < 30: mood -= random(5, 10); clamp mood to 0-100.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mood goes up when all > 70, down when any < 30, stays neutral otherwise.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-06-12T18:36:51.176Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-06-12T18:36:51.176Z"
       },
       {
         "id": "7",
@@ -145,7 +152,7 @@
           "5",
           "6"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -153,9 +160,10 @@
             "description": "Iterate city.humanIds, fetch each human from world.humans, compute average mood.",
             "dependencies": [],
             "details": "In updateCityForNewDay: sum mood values of all residents via city.humanIds, divide by count. Handle empty city (return 0).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Correct average for multiple humans, single human, empty city.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-06-12T18:43:17.578Z"
           },
           {
             "id": 2,
@@ -165,9 +173,10 @@
               1
             ],
             "details": "Check averageMood > 70 AND city.food > (city.humanIds.length * 2). If true, Math.random() < POPULATION_GROWTH_RATE triggers birth.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Conditions pass with high mood+food, fail otherwise. 2% probability works.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-06-12T18:43:17.584Z"
           },
           {
             "id": 3,
@@ -177,9 +186,10 @@
               2
             ],
             "details": "On successful birth: generate human via generateHumansForCity, add to world.humans[human.id] and city.humanIds.push(human.id). Log: 'Новый житель родился в {city.name}'.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "New human appears in world.humans and city.humanIds. Birth event logged.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-06-12T18:43:17.589Z"
           },
           {
             "id": 4,
@@ -187,9 +197,10 @@
             "description": "When city.humanIds becomes empty after a death, mark city as ruins and log destruction event.",
             "dependencies": [],
             "details": "In death handling (Task 5 logic): after removing human from city.humanIds, if length === 0, set city status to 'ruins' and log '{city.name} превратился в руины'.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "City with 1 human dying becomes ruins. City with >1 human stays active.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-06-12T18:43:17.595Z"
           },
           {
             "id": 5,
@@ -200,11 +211,13 @@
               4
             ],
             "details": "In updateCityForNewDay: after food/gold updates, calculate average mood → check birth conditions → attempt birth → log events → check for city destruction.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Full simulation: births happen in thriving cities, ruins form when last human dies.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-06-12T18:43:17.600Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-06-12T18:43:17.600Z"
       },
       {
         "id": "8",
@@ -253,9 +266,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-06-12T09:39:11.523Z",
+      "lastModified": "2026-06-12T18:43:17.600Z",
       "taskCount": 10,
-      "completedCount": 3,
+      "completedCount": 7,
       "tags": [
         "master"
       ]

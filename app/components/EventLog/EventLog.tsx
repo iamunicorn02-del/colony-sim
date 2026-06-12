@@ -27,6 +27,8 @@ const EVENT_KIND_COLOR: Record<EventKind, string> = {
     fortune: '#fbbf24',
     misfortune: '#78716c',
     human_action: '#06b6d4',
+    birth: '#f472b6',
+    city_ruins: '#991b1b',
 };
 
 export function EventLog({ eventLog }: EventLogsProps) {

@@ -88,7 +88,9 @@ export type EventKind =
   | 'caravan'
   | 'fortune'
   | 'misfortune'
-  | 'human_action';
+  | 'human_action'
+  | 'birth'
+  | 'city_ruins';
 
 export type Event = {
   id: string;
