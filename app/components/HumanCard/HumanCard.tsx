@@ -14,7 +14,11 @@ interface HumanCardProps {
 }
 
 function HumanCard({ human, onClose }: HumanCardProps) {
+  if (!human) return null;
+
   const actionClass = styles[`action_${human.currentAction}`] ?? styles.action_idle;
+  const hunger = Math.min(100, Math.max(0, human.hunger));
+  const energy = Math.min(100, Math.max(0, human.energy));
 
   return (
     <aside className={styles.card} aria-live="polite">
@@ -37,12 +41,12 @@ function HumanCard({ human, onClose }: HumanCardProps) {
       <div>
         <div className={styles.row}>
           <span className={styles.label}>Голод</span>
-          <span className={styles.value}>{human.hunger}%</span>
+          <span className={styles.value}>{hunger}%</span>
         </div>
         <div className={styles.barTrack}>
           <div
             className={`${styles.barFill} ${styles.hungerFill}`}
-            style={{ width: `${human.hunger}%` }}
+            style={{ width: `${hunger}%` }}
           />
         </div>
       </div>
@@ -50,12 +54,12 @@ function HumanCard({ human, onClose }: HumanCardProps) {
       <div>
         <div className={styles.row}>
           <span className={styles.label}>Энергия</span>
-          <span className={styles.value}>{human.energy}%</span>
+          <span className={styles.value}>{energy}%</span>
         </div>
         <div className={styles.barTrack}>
           <div
             className={`${styles.barFill} ${styles.energyFill}`}
-            style={{ width: `${human.energy}%` }}
+            style={{ width: `${energy}%` }}
           />
         </div>
       </div>

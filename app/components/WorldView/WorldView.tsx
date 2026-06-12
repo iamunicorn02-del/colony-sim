@@ -10,6 +10,7 @@ import { CityRanking } from '@/app/components/CityRanking/CityRanking';
 import { MiniMap } from '@/app/components/MiniMap/MiniMap';
 import HumanCard from '@/app/components/HumanCard/HumanCard';
 import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';
+import type { Human } from '@/app/types/tiles';
 
 const WORLD_ID_KEY = 'colony-sim:worldId';
 
@@ -31,6 +32,7 @@ export function WorldView() {
   const worldIdRef = useRef<string | null>(null);
   const selectedHumanIdRef = useRef<string | null>(null);
   selectedHumanIdRef.current = selectedHumanId;
+  const prevHumansRef = useRef<Record<string, Human>>({});
 
   const selectedCity = world?.cities.find((c) => c.id === selectedCityId) ?? null;
 
@@ -145,7 +147,7 @@ export function WorldView() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-black font-sans">
-      <main className="h-full w-full">
+      <main className="h-full w-full relative">
         <MapRenderer world={world} humans={humans} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} onHumanClick={(humanId) => { setSelectedHumanId(humanId); setSelectedTile(null); setSelectedCityId(null); const h = humans[humanId]; if (h) setCameraTarget({ x: h.x, y: h.y }); }} cameraTarget={cameraTarget} />
         <DayCounter day={day} />
         {dailyStory && (
