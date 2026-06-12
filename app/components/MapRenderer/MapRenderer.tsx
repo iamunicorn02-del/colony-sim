@@ -40,8 +40,13 @@ interface Camera {
 }
 
 const HUMAN_DOT_RADIUS = 4;
-const HUMAN_DOT_COLOR = '#3b82f6';
 const HUMAN_DOT_STROKE = '#1e40af';
+
+function getHumanDotColor(health: number): string {
+  if (health > 60) return '#3b82f6';
+  if (health >= 30) return '#eab308';
+  return '#ef4444';
+}
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -312,7 +317,7 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
 
       context.beginPath();
       context.arc(hx, hy, HUMAN_DOT_RADIUS, 0, Math.PI * 2);
-      context.fillStyle = HUMAN_DOT_COLOR;
+      context.fillStyle = getHumanDotColor(human.health);
       context.fill();
       context.lineWidth = 1;
       context.strokeStyle = HUMAN_DOT_STROKE;
