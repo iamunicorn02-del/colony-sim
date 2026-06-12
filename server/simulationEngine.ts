@@ -1,4 +1,4 @@
-import { City, CityState, TileMap, TileType, World } from '../app/types/tiles';
+import { City, CityState, Event, Human, TileMap, TileType, World } from '../app/types/tiles';
 import {
   MAP_WIDTH,
   MAP_HEIGHT,
@@ -107,11 +107,29 @@ const updateCityForNewDay = (city: City, map: TileMap): City => {
   return updated;
 };
 
-export const updateWorldForNewDay = (world: World): World => {
+const DEATH_CHANCE = 0.3;
+
+const handleHumanDeath = (h: Human, updatedWorld: World, events: Event[]): void => {
+  delete updatedWorld.humans[h.id];
+  const city = updatedWorld.cities.find((c) => c.id === h.cityId);
+  if (city) {
+    city.humanIds = city.humanIds.filter((id) => id !== h.id);
+  }
+  events.push({
+    id: `death-${h.id}-${Date.now()}`,
+    day: 0,
+    message: `${h.name} умер от истощения`,
+    kind: 'human_action',
+  });
+};
+
+export const updateWorldForNewDay = (world: World): { world: World; events: Event[] } => {
   const updatedWorld: World = {
     ...world,
+    humans: { ...world.humans },
     cities: world.cities.map((city) => updateCityForNewDay(city, world.map)),
   };
+  const events: Event[] = [];
 
   // Update humans
   for (const human of Object.values(world.humans)) {
@@ -145,11 +163,38 @@ export const updateWorldForNewDay = (world: World): World => {
       h.energy = Math.min(100, h.energy + randInt(15, 25));
     }
 
+    // Task 5.1: Health update rules based on hunger and energy
+    if (h.hunger === 0) h.health -= randInt(5, 10);
+    if (h.energy === 0) h.health -= randInt(3, 7);
+    if (h.hunger > 50 && h.energy > 50) h.health += randInt(2, 5);
+    h.health = Math.max(0, Math.min(100, h.health));
+
+    // Task 6: Mood update rules
+    if (h.hunger > 70 && h.energy > 70 && h.health > 70) {
+      h.mood = Math.min(100, h.mood + randInt(5, 10));
+    } else if (h.hunger < 30 || h.energy < 30 || h.health < 30) {
+      h.mood = Math.max(0, h.mood - randInt(5, 10));
+    }
+
+    // Task 5.3: Death chance mechanic for critically low stats
+    if (h.health < 3 && h.mood < 5) {
+      if (Math.random() < DEATH_CHANCE) {
+        handleHumanDeath(h, updatedWorld, events);
+        continue;
+      }
+    }
+
+    // Task 5.2: Death handling when health reaches 0
+    if (h.health <= 0) {
+      handleHumanDeath(h, updatedWorld, events);
+      continue;
+    }
+
     if (h.hunger < 25) h.currentAction = 'eating';
     else if (h.energy < 20) h.currentAction = 'resting';
     else h.currentAction = 'idle';
     updatedWorld.humans[h.id] = h;
   }
 
-  return updatedWorld;
+  return { world: updatedWorld, events };
 };

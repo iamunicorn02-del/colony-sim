@@ -86,7 +86,12 @@ function tickWorld(id: string) {
   if (!entry) return;
 
   entry.day += 1;
-  entry.world = updateWorldForNewDay(entry.world);
+  const simResult = updateWorldForNewDay(entry.world);
+  entry.world = simResult.world;
+  for (const evt of simResult.events) {
+    evt.day = entry.day;
+    entry.eventLog.push(evt);
+  }
 
   // Resolve trade between nearby cities.
   const tradeResult = resolveTrades(entry.world.cities, entry.world.map);
