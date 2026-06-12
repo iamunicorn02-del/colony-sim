@@ -1,0 +1,186 @@
+.inspector {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: grid;
+  gap: 4px;
+  min-width: 200px;
+  max-width: 260px;
+  padding: 10px 14px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 8px;
+  background: rgb(12 18 14 / 84%);
+  color: #f4f7f0;
+  font-size: 13px;
+  line-height: 1.3;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 24%);
+  pointer-events: auto;
+}
+
+/* ---- Header ---- */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  color: #b9c8b4;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clearBtn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.clearBtn:hover {
+  color: #f4f7f0;
+}
+
+/* ---- Section ---- */
+.section {
+  display: grid;
+  gap: 4px;
+}
+
+.empty {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ---- Names ---- */
+.name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cityName {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ---- Rows ---- */
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.metaRow {
+  display: block;
+}
+
+.label {
+  color: #b9c8b4;
+}
+
+.value {
+  color: #f4f7f0;
+}
+
+/* ---- Actions ---- */
+.action_idle {
+  color: #9ca3af;
+}
+
+.action_moving {
+  color: #60a5fa;
+}
+
+.action_eating {
+  color: #34d399;
+}
+
+.action_resting {
+  color: #fbbf24;
+}
+
+/* ---- Progress bars ---- */
+.barTrack {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 10%);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.hungerFill {
+  background: linear-gradient(90deg, #f87171, #fbbf24);
+}
+
+.energyFill {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+/* ---- Sub-headers (traits, trades, etc.) ---- */
+.subHeader {
+  margin-top: 6px;
+  color: #f5c542;
+  font-size: 11px;
+  font-weight: 600;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 4px;
+}
+
+.traitEntry {
+  padding-left: 8px;
+  color: #a8d8a8;
+  font-size: 12px;
+}
+
+.timerGolden {
+  padding-left: 8px;
+  color: #fbbf24;
+  font-size: 12px;
+}
+
+.timerDark {
+  padding-left: 8px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.timerEpidemic {
+  padding-left: 8px;
+  color: #f87171;
+  font-size: 12px;
+}
+
+.relationEntry {
+  padding-left: 8px;
+  color: #fde68a;
+  font-size: 12px;
+}
+
+.tradeEntry {
+  padding-left: 8px;
+  color: #c8e0ff;
+  font-size: 12px;
+}
+
+.historyEntry {
+  padding-left: 8px;
+  color: #d1d5db;
+  font-size: 11px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}

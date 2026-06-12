@@ -131,7 +131,6 @@ export const updateWorldForNewDay = (world: World): World => {
     else if (h.energy < 20) h.currentAction = 'resting';
     else h.currentAction = 'idle';
     updatedWorld.humans[h.id] = h;
-    console.log(`Human ${h.name}: hunger=${h.hunger}, energy=${h.energy}, action=${h.currentAction}`);
   }
 
   return updatedWorld;

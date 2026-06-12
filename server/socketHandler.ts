@@ -6,10 +6,9 @@ import {
   broadcast,
 } from './worldStore';
 import { TradeLink } from './trading';
-import { World, City, Event } from '../app/types/tiles';
+import { World, Event } from '../app/types/tiles';
 
-type CityPayload = Omit<City, 'humanIds'>;
-type WorldPayload = { map: World['map']; cities: CityPayload[]; humans: World['humans'] };
+type WorldPayload = World;
 
 export type ClientMessage =
   | { type: 'joinWorld'; worldId: string }
@@ -40,11 +39,10 @@ export function handleMessage(ws: WebSocket, raw: string) {
         return;
       }
       addClient(worldId, ws);
-      const cleanCities = entry.world.cities.map(({ humanIds, ...rest }) => rest);
       ws.send(
         JSON.stringify({
           type: 'worldState',
-          world: { ...entry.world, cities: cleanCities },
+          world: entry.world,
           day: entry.day,
           eventLog: entry.eventLog,
           dailyStory: entry.dailyStory,

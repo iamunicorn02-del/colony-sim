@@ -1,14 +1,12 @@
 'use client';
 
 import { MapRenderer } from '@/app/components/MapRenderer/MapRenderer';
-import { TileInspector } from '@/app/components/TileInspector/TileInspector';
+import { Inspector } from '@/app/components/Inspector/Inspector';
 import { DayCounter } from '../DayCounter/DayCounter';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Tile, World, Event, EventKind, Human } from '@/app/types/tiles';
 import { EventLog } from '../EventLog/EventLog';
 import { CityRanking } from '@/app/components/CityRanking/CityRanking';
-import { MiniMap } from '@/app/components/MiniMap/MiniMap';
-import HumanCard from '@/app/components/HumanCard/HumanCard';
 import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';
 
 const WORLD_ID_KEY = 'colony-sim:worldId';
@@ -37,10 +35,14 @@ export function WorldView() {
   const socketRef = useRef<ReturnType<typeof createWorldSocket> | null>(null);
   const worldIdRef = useRef<string | null>(null);
   const selectedHumanIdRef = useRef<string | null>(null);
-  selectedHumanIdRef.current = selectedHumanId;
   const prevHumansRef = useRef<Record<string, Human>>({});
 
   const selectedCity = world?.cities.find((c) => c.id === selectedCityId) ?? null;
+
+  // Keep selectedHumanIdRef in sync so the socket callback can read the latest value
+  useEffect(() => {
+    selectedHumanIdRef.current = selectedHumanId;
+  }, [selectedHumanId]);
 
   useEffect(() => {
     // Prevent double-init in Strict Mode
@@ -185,13 +187,21 @@ export function WorldView() {
             <span className="text-amber-400 mr-2">📜</span>{dailyStory}
           </div>
         )}
-        <TileInspector selectedTile={selectedTile} selectedCity={selectedCity} tradeLinks={tradeLinks} eventLog={eventLog} worldCities={world?.cities ?? []} />
-        {selectedHumanId && humans[selectedHumanId] && (
-          <HumanCard human={humans[selectedHumanId]} onClose={() => setSelectedHumanId(null)} />
-        )}
+        <Inspector
+          selectedTile={selectedTile}
+          selectedCity={selectedCity}
+          selectedHuman={selectedHumanId ? (humans[selectedHumanId] ?? null) : null}
+          tradeLinks={tradeLinks}
+          eventLog={eventLog}
+          worldCities={world?.cities ?? []}
+          onClear={() => {
+            setSelectedTile(null);
+            setSelectedCityId(null);
+            setSelectedHumanId(null);
+          }}
+        />
         <EventLog eventLog={eventLog} />
         <CityRanking cities={world.cities} />
-        <MiniMap world={world} selectedCityId={selectedCityId} onSelectCity={setSelectedCityId} />
       </main>
     </div>
   );
