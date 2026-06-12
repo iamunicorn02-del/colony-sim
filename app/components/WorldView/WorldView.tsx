@@ -10,7 +10,6 @@ import { CityRanking } from '@/app/components/CityRanking/CityRanking';
 import { MiniMap } from '@/app/components/MiniMap/MiniMap';
 import HumanCard from '@/app/components/HumanCard/HumanCard';
 import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';
-import type { Human } from '@/app/types/tiles';
 
 const WORLD_ID_KEY = 'colony-sim:worldId';
 
@@ -148,7 +147,7 @@ export function WorldView() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-black font-sans">
       <main className="h-full w-full relative">
-        <MapRenderer world={world} humans={humans} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} onHumanClick={(humanId) => { setSelectedHumanId(humanId); setSelectedTile(null); setSelectedCityId(null); const h = humans[humanId]; if (h) setCameraTarget({ x: h.x, y: h.y }); }} cameraTarget={cameraTarget} />
+        <MapRenderer world={world} humans={humans} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} setSelectedHumanId={setSelectedHumanId} onHumanClick={(humanId) => { setSelectedHumanId(humanId); setSelectedTile(null); setSelectedCityId(null); const h = humans[humanId]; if (h) setCameraTarget({ x: h.x, y: h.y }); }} cameraTarget={cameraTarget} />
         <DayCounter day={day} />
         {dailyStory && (
           <div className="absolute top-12 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-sm bg-black/60 text-white border border-white/10 pointer-events-none animate-pulse">

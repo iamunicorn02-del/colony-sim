@@ -28,6 +28,7 @@ interface MapRendererProps {
   tradeLinks: TradeLink[];
   setSelectedTile: (tile: Tile | null) => void;
   setSelectedCityId: (cityId: string | null) => void;
+  setSelectedHumanId?: (humanId: string | null) => void;
   onHumanClick?: (humanId: string) => void;
   cameraTarget?: { x: number; y: number } | null;
 }
@@ -54,7 +55,7 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
   return { min: viewportSize - contentSize, max: 0 };
 };
 
-export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile, onHumanClick, cameraTarget }: MapRendererProps) {
+export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile, setSelectedHumanId, onHumanClick, cameraTarget }: MapRendererProps) {
   const { map, cities } = world;
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
@@ -423,6 +424,7 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
       if (city) {
         setSelectedCityId(city.id);
         setSelectedTile(null);
+        setSelectedHumanId?.(null);
         return;
       }
 
@@ -442,8 +444,9 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
       }
 
       setSelectedTile(getTileFromPointer(e.clientX, e.clientY));
+      setSelectedHumanId?.(null);
     }
-  }, [getCityFromPointer, getTileFromPointer, getMapPointFromPointer, humans, onHumanClick, tileSize]);
+  }, [getCityFromPointer, getTileFromPointer, getMapPointFromPointer, humans, onHumanClick, setSelectedHumanId, tileSize]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
