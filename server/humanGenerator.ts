@@ -41,7 +41,7 @@ export function generateHumansForCity(city: City, count: number): Human[] {
       hunger: randInt(70, 100),
       energy: randInt(70, 100),
       health: randInt(70, 100),
-      mood: randInt(70, 100),
+      mood: randInt(60, 100),
       currentAction: 'idle',
     });
   }

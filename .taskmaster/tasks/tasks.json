@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "complexity": 1,
         "title": "Extend Human Type with Health and Mood",
         "description": "Add health and mood fields to the Human interface in shared/types.ts to support the new needs system mechanics.",
@@ -10,54 +10,64 @@
         "testStrategy": "Verify TypeScript compilation succeeds and that objects of type Human can be created with health and mood fields.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-06-12T09:32:52.591Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "complexity": 1,
         "title": "Update Human Generator with Initial Health and Mood",
         "description": "Modify humanGenerator.ts to initialize new humans with appropriate health and mood values.",
         "details": "In server/humanGenerator.ts, add health: randInt(70, 100) and mood: randInt(60, 100) to the human generation logic.",
         "testStrategy": "Generate multiple humans and verify health is 70-100 and mood is 60-100.",
         "priority": "high",
-        "dependencies": [1],
+        "dependencies": [
+          "1"
+        ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 3,
+        "id": "3",
         "complexity": 4,
         "title": "Implement Eating Mechanics with Food Consumption",
         "description": "Update simulationEngine.ts so that 'eating' action actually consumes city food and restores hunger.",
         "details": "In the human update loop: when currentAction === 'eating', find the human's city, if city.food >= 1 then city.food -= 1 and human.hunger += random(50, 70), clamp to 100. Update eating threshold from hunger < 20 to hunger < 25.",
         "testStrategy": "Human with eating action + food: hunger increases, food decreases. No food: hunger stays same.",
         "priority": "high",
-        "dependencies": [1],
+        "dependencies": [
+          "1"
+        ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 4,
+        "id": "4",
         "complexity": 3,
         "title": "Implement Resting Mechanics with Energy Recovery",
         "description": "Update simulationEngine.ts so that 'resting' action restores energy and prevents movement.",
         "details": "When currentAction === 'resting': human.energy += random(15, 25), clamp to 100. Ensure movement chance is skipped for resting humans.",
         "testStrategy": "Resting human recovers energy and does not change position.",
         "priority": "high",
-        "dependencies": [1],
+        "dependencies": [
+          "1"
+        ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 5,
+        "id": "5",
         "complexity": 6,
         "title": "Implement Health System with Death Mechanics",
         "description": "Create health update logic that depends on hunger/energy and handles death when health reaches 0.",
         "details": "In server/simulationEngine.ts, after updating hunger and energy: health update rules based on hunger/energy, death handling when health <= 0, death chance when health < 3 AND mood < 5.",
         "testStrategy": "Health decreases when hunger/energy = 0, increases when both > 50. Human removed at health = 0.",
         "priority": "high",
-        "dependencies": [3, 4],
+        "dependencies": [
+          "3",
+          "4"
+        ],
         "status": "pending",
         "subtasks": [
           {
@@ -67,37 +77,46 @@
             "dependencies": [],
             "details": "In server/simulationEngine.ts, after updating hunger and energy: if hunger === 0: health -= random(5, 10); if energy === 0: health -= random(3, 7); if hunger > 50 && energy > 50: health += random(2, 5); clamp health to 0-100.",
             "status": "pending",
-            "testStrategy": "Health decreases when hunger/energy=0, increases when both>50, clamped at 0-100."
+            "testStrategy": "Health decreases when hunger/energy=0, increases when both>50, clamped at 0-100.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
             "title": "Implement death handling when health reaches 0",
             "description": "Remove human from world.humans and city.humanIds, log death event.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "If health <= 0: remove from world.humans, remove humanId from city.humanIds, add eventLog entry: '{name} умер от истощения'.",
             "status": "pending",
-            "testStrategy": "Human at health=0 is removed from all data structures. Death event is logged."
+            "testStrategy": "Human at health=0 is removed from all data structures. Death event is logged.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
             "title": "Implement death chance mechanic for critically low stats",
             "description": "30% death chance when health < 3 AND mood < 5.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "After health update: if health < 3 AND mood < 5, apply 30% death chance (DEATH_CHANCE = 0.3). Same removal logic as health <= 0.",
             "status": "pending",
-            "testStrategy": "Human with health<3 and mood<5 has 30% death chance. No death chance otherwise."
+            "testStrategy": "Human with health<3 and mood<5 has 30% death chance. No death chance otherwise.",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 6,
+        "id": "6",
         "complexity": 3,
         "title": "Implement Mood System",
         "description": "Create mood update logic based on overall wellbeing of the human.",
         "details": "In server/simulationEngine.ts, after health update: mood += 5-10 if all stats > 70, mood -= 5-10 if any stat < 30, clamp 0-100.",
         "testStrategy": "Mood increases when all stats > 70, decreases when any < 30, clamped at 0-100.",
         "priority": "medium",
-        "dependencies": [5],
+        "dependencies": [
+          "5"
+        ],
         "status": "pending",
         "subtasks": [
           {
@@ -107,19 +126,23 @@
             "dependencies": [],
             "details": "In server/simulationEngine.ts, after health update: if hunger > 70 && energy > 70 && health > 70: mood += random(5, 10); if hunger < 30 || energy < 30 || health < 30: mood -= random(5, 10); clamp mood to 0-100.",
             "status": "pending",
-            "testStrategy": "Mood goes up when all > 70, down when any < 30, stays neutral otherwise."
+            "testStrategy": "Mood goes up when all > 70, down when any < 30, stays neutral otherwise.",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 7,
+        "id": "7",
         "complexity": 7,
         "title": "Implement Population Dynamics",
         "description": "Add birth mechanics and city destruction based on average morale and food availability.",
         "details": "In updateCityForNewDay: calculate average mood, birth if mood>70 and food>pop*2 with 2% chance, city becomes ruins when last human dies.",
         "testStrategy": "High mood + food → birth chance. Last human dies → ruins.",
         "priority": "medium",
-        "dependencies": [5, 6],
+        "dependencies": [
+          "5",
+          "6"
+        ],
         "status": "pending",
         "subtasks": [
           {
@@ -129,25 +152,32 @@
             "dependencies": [],
             "details": "In updateCityForNewDay: sum mood values of all residents via city.humanIds, divide by count. Handle empty city (return 0).",
             "status": "pending",
-            "testStrategy": "Correct average for multiple humans, single human, empty city."
+            "testStrategy": "Correct average for multiple humans, single human, empty city.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
             "title": "Implement birth condition checks and probability",
             "description": "If average mood > 70 AND city.food > population * 2, apply 2% birth chance.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "Check averageMood > 70 AND city.food > (city.humanIds.length * 2). If true, Math.random() < POPULATION_GROWTH_RATE triggers birth.",
             "status": "pending",
-            "testStrategy": "Conditions pass with high mood+food, fail otherwise. 2% probability works."
+            "testStrategy": "Conditions pass with high mood+food, fail otherwise. 2% probability works.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
             "title": "Generate new human and log birth event",
             "description": "Call generateHumansForCity on successful birth, add to world.humans and city.humanIds, log event.",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "On successful birth: generate human via generateHumansForCity, add to world.humans[human.id] and city.humanIds.push(human.id). Log: 'Новый житель родился в {city.name}'.",
             "status": "pending",
-            "testStrategy": "New human appears in world.humans and city.humanIds. Birth event logged."
+            "testStrategy": "New human appears in world.humans and city.humanIds. Birth event logged.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -156,60 +186,77 @@
             "dependencies": [],
             "details": "In death handling (Task 5 logic): after removing human from city.humanIds, if length === 0, set city status to 'ruins' and log '{city.name} превратился в руины'.",
             "status": "pending",
-            "testStrategy": "City with 1 human dying becomes ruins. City with >1 human stays active."
+            "testStrategy": "City with 1 human dying becomes ruins. City with >1 human stays active.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
             "title": "Integrate population dynamics into updateCityForNewDay",
             "description": "Combine mood calculation, birth, and city destruction into the city update function in correct order.",
-            "dependencies": [3, 4],
+            "dependencies": [
+              3,
+              4
+            ],
             "details": "In updateCityForNewDay: after food/gold updates, calculate average mood → check birth conditions → attempt birth → log events → check for city destruction.",
             "status": "pending",
-            "testStrategy": "Full simulation: births happen in thriving cities, ruins form when last human dies."
+            "testStrategy": "Full simulation: births happen in thriving cities, ruins form when last human dies.",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 8,
+        "id": "8",
         "complexity": 4,
         "title": "Add Health and Mood Progress Bars to Inspector UI",
         "description": "Extend Inspector component to display health and mood progress bars with appropriate colors.",
         "details": "In Inspector.tsx and Inspector.module.css: add health bar (red→green, label 'Здоровье') and mood bar (gray→gold, label 'Настроение'). All 4 bars: hunger, energy, health, mood.",
         "testStrategy": "4 bars displayed with correct colors and Russian labels.",
         "priority": "medium",
-        "dependencies": [1],
+        "dependencies": [
+          "1"
+        ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 9,
+        "id": "9",
         "complexity": 2,
         "title": "Update Human Dot Colors Based on Health",
         "description": "Modify MapRenderer to color human dots based on their health status.",
         "details": "Replace HUMAN_DOT_COLOR with getHumanDotColor(health): >60 → blue #3b82f6, 30-60 → yellow #eab308, <30 → red #ef4444.",
         "testStrategy": "Dot colors match health: blue (>60), yellow (30-60), red (<30).",
         "priority": "medium",
-        "dependencies": [1],
+        "dependencies": [
+          "1"
+        ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 10,
+        "id": "10",
         "complexity": 2,
         "title": "Verify WebSocket Protocol for Health and Mood Data",
         "description": "Ensure server sends complete human data including health and mood to clients via WebSocket.",
         "details": "Verify worldState payload includes humans with all fields. Check ServerMessage type in worldSocket.ts. Ensure no data is filtered out.",
         "testStrategy": "Client receives health and mood via WebSocket. Values update in real-time.",
         "priority": "low",
-        "dependencies": [1, 8, 9],
+        "dependencies": [
+          "1",
+          "8",
+          "9"
+        ],
         "status": "pending",
         "subtasks": []
       }
     ],
     "metadata": {
-      "created": "2026-06-12T09:05:33.157Z",
-      "updated": "2026-06-12T09:15:00.000Z",
-      "description": "Tasks for master context"
+      "version": "1.0.0",
+      "lastModified": "2026-06-12T09:32:52.592Z",
+      "taskCount": 10,
+      "completedCount": 1,
+      "tags": [
+        "master"
+      ]
     }
   }
 }
