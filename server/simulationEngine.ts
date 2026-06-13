@@ -1,4 +1,4 @@
-import { City, CityState, Event, Human, TileMap, TileType, World } from '../app/types/tiles';
+import { City, CityState, Event, Human, Poi, TileMap, TileType, World } from '../app/types/tiles';
 import { generateHumansForCity } from './humanGenerator';
 import {
   MAP_WIDTH,
@@ -157,7 +157,7 @@ const updateCityForNewDay = (city: City, map: TileMap, world: World): { city: Ci
   // Task 7.2 & 7.3: Check birth conditions and generate new human
   if (avgMood > BIRTH_AVG_MOOD_THRESHOLD && city.food > pop * BIRTH_FOOD_SURPLUS_MULTIPLIER) {
     if (Math.random() < POPULATION_GROWTH_RATE) {
-      const newHumans = generateHumansForCity(updated, 1);
+      const newHumans = generateHumansForCity(updated, 1, map);
       for (const newHuman of newHumans) {
         // Ensure unique ID by appending timestamp
         newHuman.id = `human-${city.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -177,19 +177,39 @@ const updateCityForNewDay = (city: City, map: TileMap, world: World): { city: Ci
   return { city: updated, events };
 };
 
-const handleHumanDeath = (h: Human, updatedWorld: World, events: Event[]): void => {
+/** If the city's last inhabitant died, creates a ruins Poi and removes the city. */
+const handleHumanDeath = (h: Human, updatedWorld: World, events: Event[]): Poi | null => {
   delete updatedWorld.humans[h.id];
   const city = updatedWorld.cities.find((c) => c.id === h.cityId);
   if (city) {
     city.humanIds = city.humanIds.filter((id) => id !== h.id);
-    // Task 7.4: City destruction when last human dies
     if (city.humanIds.length === 0) {
+      // Remove the dead city from the cities array
+      updatedWorld.cities = updatedWorld.cities.filter((c) => c.id !== city.id);
+      // Create a ruins POI at the city's location
+      const ruins: Poi = {
+        id: `ruins-${city.id}`,
+        kind: 'ruins',
+        name: city.name,
+        x: city.x,
+        y: city.y,
+        formerCityId: city.id,
+        formerCityName: city.name,
+        createdDay: 0, // will be set by the caller (tick day)
+      };
       events.push({
         id: `city-ruins-${city.id}-${Date.now()}`,
         day: 0,
         message: `${city.name} превратился в руины`,
         kind: 'city_ruins',
       });
+      events.push({
+        id: `death-${h.id}-${Date.now()}`,
+        day: 0,
+        message: `${h.name} умер от истощения`,
+        kind: 'human_action',
+      });
+      return ruins;
     }
   }
   events.push({
@@ -198,6 +218,7 @@ const handleHumanDeath = (h: Human, updatedWorld: World, events: Event[]): void 
     message: `${h.name} умер от истощения`,
     kind: 'human_action',
   });
+  return null;
 };
 
 export const updateWorldForNewDay = (world: World): { world: World; events: Event[] } => {
@@ -206,21 +227,28 @@ export const updateWorldForNewDay = (world: World): { world: World; events: Even
     ...world,
     humans: { ...world.humans },
     cities: cityResults.map((r) => r.city),
+    pois: [...world.pois],
   };
   const events: Event[] = cityResults.flatMap((r) => r.events);
+  const newPois: Poi[] = [];
 
   // Update humans
   for (const human of Object.values(world.humans)) {
     const h = { ...human };
 
-    // Movement: only if not eating or resting
+    // Movement: only if not eating or resting, and only onto grass tiles
     if (human.currentAction !== 'eating' && human.currentAction !== 'resting') {
       if (Math.random() < HUMAN_MOVE_CHANCE) {
         const dx = randInt(HUMAN_MOVE_DELTA_RANGE.min, HUMAN_MOVE_DELTA_RANGE.max);
         const dy = randInt(HUMAN_MOVE_DELTA_RANGE.min, HUMAN_MOVE_DELTA_RANGE.max);
-        h.x = clamp(h.x + dx, 0, MAP_WIDTH - 1);
-        h.y = clamp(h.y + dy, 0, MAP_HEIGHT - 1);
-        h.currentAction = 'moving';
+        const newX = clamp(h.x + dx, 0, MAP_WIDTH - 1);
+        const newY = clamp(h.y + dy, 0, MAP_HEIGHT - 1);
+        // Block movement onto water and mountain tiles
+        if (updatedWorld.map[newY][newX].type === TileType.GRASS) {
+          h.x = newX;
+          h.y = newY;
+          h.currentAction = 'moving';
+        }
       }
     }
 
@@ -259,14 +287,16 @@ export const updateWorldForNewDay = (world: World): { world: World; events: Even
     // Death chance mechanic for critically low stats
     if (h.health < DEATH_HEALTH_THRESHOLD && h.mood < DEATH_MOOD_THRESHOLD) {
       if (Math.random() < DEATH_CHANCE) {
-        handleHumanDeath(h, updatedWorld, events);
+        const poi = handleHumanDeath(h, updatedWorld, events);
+        if (poi) newPois.push(poi);
         continue;
       }
     }
 
     // Task 5.2: Death handling when health reaches 0
     if (h.health <= 0) {
-      handleHumanDeath(h, updatedWorld, events);
+      const poi = handleHumanDeath(h, updatedWorld, events);
+      if (poi) newPois.push(poi);
       continue;
     }
 
@@ -275,6 +305,8 @@ export const updateWorldForNewDay = (world: World): { world: World; events: Even
     else h.currentAction = 'idle';
     updatedWorld.humans[h.id] = h;
   }
+
+  updatedWorld.pois = [...updatedWorld.pois, ...newPois];
 
   return { world: updatedWorld, events };
 };

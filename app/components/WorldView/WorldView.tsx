@@ -4,7 +4,7 @@ import { MapRenderer } from '@/app/components/MapRenderer/MapRenderer';
 import { Inspector } from '@/app/components/Inspector/Inspector';
 import { DayCounter } from '../DayCounter/DayCounter';
 import { useEffect, useRef, useState } from 'react';
-import { Tile, World, Event, EventKind, Human } from '@/app/types/tiles';
+import { Tile, World, Event, EventKind, Human, Poi } from '@/app/types/tiles';
 import { EventLog } from '../EventLog/EventLog';
 import { CityRanking } from '@/app/components/CityRanking/CityRanking';
 import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';
@@ -18,6 +18,7 @@ export function WorldView() {
   const [day, setDay] = useState(0);
   const [eventLog, setEventLog] = useState<Event[]>([]);
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
+  const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const [selectedHumanId, setSelectedHumanId] = useState<string | null>(null);
   const [tradeLinks, setTradeLinks] = useState<TradeLink[]>([]);
@@ -31,6 +32,7 @@ export function WorldView() {
   const selectedHumanIdRef = useRef<string | null>(null);
 
   const selectedCity = world?.cities.find((c) => c.id === selectedCityId) ?? null;
+  const selectedPoi = world?.pois.find((p) => p.id === selectedPoiId) ?? null;
 
   // Keep selectedHumanIdRef in sync so the socket callback can read the latest value
   useEffect(() => {
@@ -156,7 +158,7 @@ export function WorldView() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-black font-sans">
       <main className="h-full w-full relative">
-        <MapRenderer world={world} humans={humans} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedTile={setSelectedTile} setSelectedHumanId={setSelectedHumanId} onHumanClick={(humanId) => { setSelectedHumanId(humanId); setSelectedTile(null); setSelectedCityId(null); const h = humans[humanId]; if (h) setCameraTarget({ x: h.x, y: h.y }); }} cameraTarget={cameraTarget} />
+        <MapRenderer world={world} humans={humans} pois={world.pois} tileSize={16} tradeLinks={tradeLinks} setSelectedCityId={setSelectedCityId} setSelectedPoiId={setSelectedPoiId} setSelectedTile={setSelectedTile} setSelectedHumanId={setSelectedHumanId} onHumanClick={(humanId) => { setSelectedHumanId(humanId); setSelectedTile(null); setSelectedCityId(null); setSelectedPoiId(null); const h = humans[humanId]; if (h) setCameraTarget({ x: h.x, y: h.y }); }} cameraTarget={cameraTarget} />
         <DayCounter day={day} />
         {dailyStory && (
           <div className="absolute top-12 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-sm bg-black/60 text-white border border-white/10 pointer-events-none animate-pulse">
@@ -167,12 +169,14 @@ export function WorldView() {
           selectedTile={selectedTile}
           selectedCity={selectedCity}
           selectedHuman={selectedHumanId ? (humans[selectedHumanId] ?? null) : null}
+          selectedPoi={selectedPoi}
           tradeLinks={tradeLinks}
           eventLog={eventLog}
           worldCities={world?.cities ?? []}
           onClear={() => {
             setSelectedTile(null);
             setSelectedCityId(null);
+            setSelectedPoiId(null);
             setSelectedHumanId(null);
           }}
         />

@@ -127,5 +127,6 @@ export function generateMap(seed: number = Math.random()): World {
     map,
     cities: generateCities(map, seededRandom),
     humans: {},
+    pois: [],
   };
 }

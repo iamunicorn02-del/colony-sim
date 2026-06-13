@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Tile, World, Human } from '@/app/types/tiles';
+import { Tile, World, Human, Poi } from '@/app/types/tiles';
 import type { TradeLink } from '@/app/lib/worldSocket';
 import styles from './MapRenderer.module.css';
 import {
@@ -24,10 +24,12 @@ import {
 interface MapRendererProps {
   world: World;
   humans: Record<string, Human>;
+  pois: Poi[];
   tileSize?: number;
   tradeLinks: TradeLink[];
   setSelectedTile: (tile: Tile | null) => void;
   setSelectedCityId: (cityId: string | null) => void;
+  setSelectedPoiId: (poiId: string | null) => void;
   setSelectedHumanId?: (humanId: string | null) => void;
   onHumanClick?: (humanId: string) => void;
   cameraTarget?: { x: number; y: number } | null;
@@ -60,7 +62,7 @@ const getAxisBounds = (viewportSize: number, contentSize: number) => {
   return { min: viewportSize - contentSize, max: 0 };
 };
 
-export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedTile, setSelectedHumanId, onHumanClick, cameraTarget }: MapRendererProps) {
+export function MapRenderer({ world, humans, pois, tileSize = 16, tradeLinks, setSelectedCityId, setSelectedPoiId, setSelectedTile, setSelectedHumanId, onHumanClick, cameraTarget }: MapRendererProps) {
   const { map, cities } = world;
   const mapHeight = map?.length ?? 0;
   const mapWidth = map?.[0]?.length ?? 0;
@@ -277,6 +279,43 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
       }
     }
 
+    // --- POI markers (ruins, bandit camps, caves, etc.) ---
+    for (const poi of pois) {
+      const centerX = (poi.x + 0.5) * tileSize;
+      const centerY = (poi.y + 0.5) * tileSize;
+
+      if (poi.kind === 'ruins') {
+        const r = 6;
+        // Empty grey circle
+        context.beginPath();
+        context.arc(centerX, centerY, r, 0, Math.PI * 2);
+        context.strokeStyle = '#9ca3af';
+        context.lineWidth = 2;
+        context.stroke();
+        // Cross inside
+        context.beginPath();
+        context.moveTo(centerX - r * 0.5, centerY - r * 0.5);
+        context.lineTo(centerX + r * 0.5, centerY + r * 0.5);
+        context.moveTo(centerX + r * 0.5, centerY - r * 0.5);
+        context.lineTo(centerX - r * 0.5, centerY + r * 0.5);
+        context.strokeStyle = '#9ca3af';
+        context.lineWidth = 1.5;
+        context.stroke();
+      } else if (poi.kind === 'bandit_camp') {
+        const r = 5;
+        context.beginPath();
+        context.arc(centerX, centerY, r, 0, Math.PI * 2);
+        context.fillStyle = '#7c3aed';
+        context.fill();
+      } else if (poi.kind === 'cave') {
+        const r = 5;
+        context.beginPath();
+        context.arc(centerX, centerY, r, 0, Math.PI * 2);
+        context.fillStyle = '#78716c';
+        context.fill();
+      }
+    }
+
     // City name labels drawn above their markers, with an outline so they stay
     // readable over any terrain.
     context.font = CITY_LABEL_FONT;
@@ -310,6 +349,25 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
       context.fillText(label, centerX, labelY);
     }
 
+    // POI labels (grey, semi-transparent)
+    for (const poi of pois) {
+      const centerX = (poi.x + 0.5) * tileSize;
+      const centerY = (poi.y + 0.5) * tileSize;
+      const labelY = centerY - 10;
+
+      let label = poi.name;
+      if (poi.kind === 'ruins') label = `💀 ${poi.formerCityName ?? poi.name}`;
+      else if (poi.kind === 'bandit_camp') label = `⚔ ${poi.name}`;
+      else if (poi.kind === 'cave') label = `🕳 ${poi.name}`;
+
+      context.save();
+      context.globalAlpha = 0.7;
+      context.strokeText(label, centerX, labelY);
+      context.fillStyle = '#9ca3af';
+      context.fillText(label, centerX, labelY);
+      context.restore();
+    }
+
     // Human dots
     for (const human of Object.values(humans)) {
       const hx = (human.x + 0.5) * tileSize;
@@ -323,7 +381,7 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
       context.strokeStyle = HUMAN_DOT_STROKE;
       context.stroke();
     }
-  }, [cities, humans, tradeLinks, map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
+  }, [cities, humans, pois, tradeLinks, map, mapHeight, mapPixelHeight, mapPixelWidth, mapWidth, tileSize]);
 
   useEffect(() => {
     const viewport = containerRef.current;
@@ -369,6 +427,21 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
       return Math.hypot(point.x - centerX, point.y - centerY) <= CITY_MARKER_RADIUS_MAX + 2;
     }) ?? null;
   }, [cities, getMapPointFromPointer, tileSize]);
+
+  const getPoiFromPointer = useCallback((clientX: number, clientY: number) => {
+    const point = getMapPointFromPointer(clientX, clientY);
+
+    if (!point) {
+      return null;
+    }
+
+    return pois.find((poi) => {
+      const centerX = (poi.x + 0.5) * tileSize;
+      const centerY = (poi.y + 0.5) * tileSize;
+
+      return Math.hypot(point.x - centerX, point.y - centerY) <= 10;
+    }) ?? null;
+  }, [pois, getMapPointFromPointer, tileSize]);
 
   const getTileFromPointer = useCallback((clientX: number, clientY: number) => {
     const point = getMapPointFromPointer(clientX, clientY);
@@ -430,6 +503,16 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
         setSelectedCityId(city.id);
         setSelectedTile(null);
         setSelectedHumanId?.(null);
+        setSelectedPoiId(null);
+        return;
+      }
+
+      const poi = getPoiFromPointer(e.clientX, e.clientY);
+      if (poi) {
+        setSelectedPoiId(poi.id);
+        setSelectedCityId(null);
+        setSelectedTile(null);
+        setSelectedHumanId?.(null);
         return;
       }
 
@@ -450,8 +533,9 @@ export function MapRenderer({ world, humans, tileSize = 16, tradeLinks, setSelec
 
       setSelectedTile(getTileFromPointer(e.clientX, e.clientY));
       setSelectedHumanId?.(null);
+      setSelectedPoiId(null);
     }
-  }, [getCityFromPointer, getTileFromPointer, getMapPointFromPointer, humans, onHumanClick, setSelectedHumanId, tileSize]);
+  }, [getCityFromPointer, getPoiFromPointer, getTileFromPointer, getMapPointFromPointer, humans, onHumanClick, setSelectedHumanId, setSelectedPoiId, tileSize]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();

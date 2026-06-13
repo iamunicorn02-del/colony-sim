@@ -105,7 +105,7 @@ const EVENT_DEFS: EventDef[] = [
       const bonus = getRandomInt(HARVEST_FOOD_BONUS_RANGE.min, HARVEST_FOOD_BONUS_RANGE.max);
       const updated: City = { ...city, food: city.food + bonus };
       return {
-        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
+        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)), pois: world.pois },
         message: `🌾 Bountiful harvest in ${city.name}: +${bonus} food`,
         affectedCityIds: [city.id],
       };
@@ -125,7 +125,7 @@ const EVENT_DEFS: EventDef[] = [
       const actualLost = Math.min(lost, city.humanIds.length);
       const updated: City = { ...city, humanIds: city.humanIds.slice(lost) };
       return {
-        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
+        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)), pois: world.pois },
         message: `☠️ Plague strikes ${city.name}: -${actualLost} population`,
         affectedCityIds: [city.id],
       };
@@ -152,7 +152,7 @@ const EVENT_DEFS: EventDef[] = [
         status: { state: 'golden_age', color: CITY_STATUS_COLORS.golden_age },
       };
       return {
-        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
+        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)), pois: world.pois },
         message: `✨ Golden age begins in ${city.name}! +${foodBonus} food, +${goldBonus} gold`,
         affectedCityIds: [city.id],
       };
@@ -177,7 +177,7 @@ const EVENT_DEFS: EventDef[] = [
         status: { state: 'dark_age', color: CITY_STATUS_COLORS.dark_age },
       };
       return {
-        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
+        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)), pois: world.pois },
         message: `💀 Dark age falls upon ${city.name}: -${goldLoss} gold lost to unrest`,
         affectedCityIds: [city.id],
       };
@@ -196,7 +196,7 @@ const EVENT_DEFS: EventDef[] = [
       const loss = Math.floor(city.food * DROUGHT_FOOD_LOSS_FRAC);
       const updated: City = { ...city, food: Math.max(0, city.food - loss) };
       return {
-        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
+        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)), pois: world.pois },
         message: `🏜️ Drought hits ${city.name}: -${loss} food`,
         affectedCityIds: [city.id],
       };
@@ -215,7 +215,7 @@ const EVENT_DEFS: EventDef[] = [
       const goldBonus = getRandomInt(FORTUNATE_GOLD_BONUS_RANGE.min, FORTUNATE_GOLD_BONUS_RANGE.max);
       const updated: City = { ...city, gold: city.gold + goldBonus };
       return {
-        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
+        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)), pois: world.pois },
         message: `🍀 Good fortune smiles on ${city.name}: +${goldBonus} gold`,
         affectedCityIds: [city.id],
       };
@@ -234,7 +234,7 @@ const EVENT_DEFS: EventDef[] = [
       const foodLoss = getRandomInt(DOOMED_FOOD_LOSS_RANGE.min, DOOMED_FOOD_LOSS_RANGE.max);
       const updated: City = { ...city, food: Math.max(0, city.food - foodLoss) };
       return {
-        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
+        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)), pois: world.pois },
         message: `🔥 Misfortune strikes ${city.name}: -${foodLoss} food`,
         affectedCityIds: [city.id],
       };
@@ -310,7 +310,7 @@ const EVENT_DEFS: EventDef[] = [
         .concat(colony);
 
       return {
-        world: { ...world, cities: newCities },
+        world: { ...world, cities: newCities, pois: world.pois },
         message: `🏛️ ${parent.name} founded a new colony: ${colonyName}`,
         affectedCityIds: [parent.id, colony.id],
       };
@@ -352,7 +352,7 @@ const EVENT_DEFS: EventDef[] = [
       });
 
       return {
-        world: { ...world, cities: newCities },
+        world: { ...world, cities: newCities, pois: world.pois },
         message: `⚔️ Conflict between ${a.name} and ${b.name}: -${lossA} / -${lossB} population`,
         affectedCityIds: [a.id, b.id],
       };
@@ -396,7 +396,7 @@ const EVENT_DEFS: EventDef[] = [
       });
 
       return {
-        world: { ...world, cities: newCities },
+        world: { ...world, cities: newCities, pois: world.pois },
         message: `🤝 Trade alliance formed between ${a.name} and ${b.name}: +${goldBonus} gold each`,
         affectedCityIds: [a.id, b.id],
       };
@@ -428,7 +428,7 @@ const EVENT_DEFS: EventDef[] = [
       const loss = Math.floor(city.food * FLOOD_FOOD_LOSS_FRAC);
       const updated: City = { ...city, food: Math.max(0, city.food - loss) };
       return {
-        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)) },
+        world: { ...world, cities: world.cities.map((c) => (c.id === city.id ? updated : c)), pois: world.pois },
         message: `🌊 Flood devastates ${city.name}: -${loss} food washed away`,
         affectedCityIds: [city.id],
       };
@@ -479,7 +479,7 @@ const EVENT_DEFS: EventDef[] = [
 
       const affectedIds = [origin.id, ...spreadTargets.map((c) => c.id)];
       return {
-        world: { ...world, cities: newCities },
+        world: { ...world, cities: newCities, pois: world.pois },
         message: `🦠 Epidemic erupts in ${origin.name} (spreading along trade routes): -${loss} population`,
         affectedCityIds: affectedIds,
       };
@@ -520,7 +520,7 @@ const EVENT_DEFS: EventDef[] = [
       });
 
       return {
-        world: { ...world, cities: newCities },
+        world: { ...world, cities: newCities, pois: world.pois },
         message: `🐪 Caravan from ${city.name} to ${partner.name}: ${foodTraded} food ↔ ${goldTraded} gold`,
         affectedCityIds: [city.id, partner.id],
       };

@@ -29,7 +29,7 @@ export function createWorldEntry(world: World): string {
   // Generate humans for each city
   for (const city of world.cities) {
     const count = randInt(HUMANS_PER_CITY_RANGE.min, HUMANS_PER_CITY_RANGE.max);
-    const humans = generateHumansForCity(city, count);
+    const humans = generateHumansForCity(city, count, world.map);
     const ids: string[] = [];
     for (const human of humans) {
       world.humans[human.id] = human;

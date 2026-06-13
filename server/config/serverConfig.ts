@@ -50,7 +50,7 @@ export const STAT_MAX = 100;
 // --- Human Behaviour -------------------------------------------------------
 // Movement: chance to move each tick and delta range.
 export const HUMAN_MOVE_CHANCE = 0.3;
-export const HUMAN_MOVE_DELTA_RANGE = { min: -2, max: 2 };
+export const HUMAN_MOVE_DELTA_RANGE = { min: -1, max: 1 };
 
 // City initialisation: how many humans spawn per city.
 export const HUMANS_PER_CITY_RANGE = { min: 5, max: 10 };

@@ -60,10 +60,27 @@ export type City = {
 
 export type TileMap = Tile[][];
 
+export type PoiKind = 'ruins' | 'bandit_camp' | 'cave';
+
+export type Poi = {
+  id: string;
+  kind: PoiKind;
+  name: string;
+  x: number;
+  y: number;
+  /** For ruins — the original city ID */
+  formerCityId?: string;
+  /** For ruins — the original city name */
+  formerCityName?: string;
+  /** Day this POI was created */
+  createdDay: number;
+};
+
 export type World = {
   map: TileMap;
   cities: City[];
   humans: Record<string, Human>;
+  pois: Poi[];
 };
 
 /**

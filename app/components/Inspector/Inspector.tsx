@@ -1,4 +1,4 @@
-import { Tile, City, Event, Human } from '@/app/types/tiles';
+import { Tile, City, Event, Human, Poi } from '@/app/types/tiles';
 import type { TradeLink } from '@/app/lib/worldSocket';
 import styles from './Inspector.module.css';
 
@@ -32,6 +32,7 @@ interface InspectorProps {
   selectedTile: Tile | null;
   selectedCity: City | null;
   selectedHuman: Human | null;
+  selectedPoi: Poi | null;
   tradeLinks: TradeLink[];
   eventLog: Event[];
   worldCities: City[];
@@ -42,6 +43,7 @@ export function Inspector({
   selectedTile,
   selectedCity,
   selectedHuman,
+  selectedPoi,
   tradeLinks,
   eventLog,
   worldCities,
@@ -80,6 +82,9 @@ export function Inspector({
   } else if (selectedCity) {
     title = 'City Inspector';
     showClear = true;
+  } else if (selectedPoi) {
+    title = selectedPoi.kind === 'ruins' ? '💀 Руины' : selectedPoi.kind === 'bandit_camp' ? '⚔ Лагерь разбойников' : '🕳 Пещера';
+    showClear = true;
   } else if (selectedTile) {
     title = 'Tile Inspector';
     showClear = true;
@@ -109,11 +114,15 @@ export function Inspector({
         />
       )}
 
-      {selectedTile && !selectedHuman && !selectedCity && (
+      {selectedPoi && !selectedHuman && !selectedCity && (
+        <PoiSection poi={selectedPoi} />
+      )}
+
+      {selectedTile && !selectedHuman && !selectedCity && !selectedPoi && (
         <TileSection tile={selectedTile} />
       )}
 
-      {!selectedHuman && !selectedCity && !selectedTile && (
+      {!selectedHuman && !selectedCity && !selectedPoi && !selectedTile && (
         <span className={styles.empty}>Ничего не выбрано</span>
       )}
     </aside>
@@ -267,6 +276,37 @@ function CitySection({
           Day {e.day}: {e.message}
         </span>
       ))}
+    </div>
+  );
+}
+
+function PoiSection({ poi }: { poi: Poi }) {
+  const kindLabel =
+    poi.kind === 'ruins' ? '💀 Руины' : poi.kind === 'bandit_camp' ? '⚔ Лагерь разбойников' : '🕳 Пещера';
+
+  return (
+    <div className={styles.section}>
+      <span className={styles.cityName} style={{ color: '#9ca3af' }}>
+        {kindLabel}
+      </span>
+      {poi.formerCityName && (
+        <div className={styles.metaRow}>
+          <span style={{ color: '#9ca3af' }}>Бывший город: {poi.formerCityName}</span>
+        </div>
+      )}
+      <div className={styles.metaRow}>
+        <span>X: {poi.x} &nbsp; Y: {poi.y}</span>
+      </div>
+      {poi.createdDay > 0 && (
+        <div className={styles.metaRow}>
+          <span>День появления: {poi.createdDay}</span>
+        </div>
+      )}
+      {poi.kind === 'ruins' && (
+        <div className={styles.metaRow}>
+          <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Этот город был заброшен</span>
+        </div>
+      )}
     </div>
   );
 }
