@@ -11,12 +11,6 @@ import { createWorldSocket, type TradeLink } from '@/app/lib/worldSocket';
 
 const WORLD_ID_KEY = 'colony-sim:worldId';
 
-const HUMAN_ACTION_RU: Record<string, string> = {
-  idle: 'отдыхает',
-  moving: 'двигается',
-  eating: 'ест',
-  resting: 'отдыхает',
-};
 
 export function WorldView() {
   const [world, setWorld] = useState<World | null>(null);
@@ -35,7 +29,6 @@ export function WorldView() {
   const socketRef = useRef<ReturnType<typeof createWorldSocket> | null>(null);
   const worldIdRef = useRef<string | null>(null);
   const selectedHumanIdRef = useRef<string | null>(null);
-  const prevHumansRef = useRef<Record<string, Human>>({});
 
   const selectedCity = world?.cities.find((c) => c.id === selectedCityId) ?? null;
 
@@ -98,25 +91,8 @@ export function WorldView() {
               setTradeLinks(msg.tradeLinks ?? []);
               setLoading(false);
 
-              // Detect human action changes and generate events
-              const prevHumans = prevHumansRef.current;
-              const actionEvents: Event[] = [];
-              for (const [id, human] of Object.entries(newHumans)) {
-                const prev = prevHumans[id];
-                if (prev && prev.currentAction !== human.currentAction) {
-                  const actionRu = HUMAN_ACTION_RU[human.currentAction] ?? human.currentAction;
-                  actionEvents.push({
-                    id: crypto.randomUUID(),
-                    day: msg.day,
-                    message: `${human.name} ${actionRu}`,
-                    kind: 'human_action',
-                  });
-                }
-              }
-              prevHumansRef.current = newHumans;
-
               setEventLog(
-                [...(msg.eventLog as Event[]), ...actionEvents].slice(-50)
+                (msg.eventLog as Event[]).slice(-50)
               );
 
               // Update camera target to follow selected human
